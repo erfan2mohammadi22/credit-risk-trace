@@ -19,7 +19,7 @@ CreditTrace is deployed in two fundamentally different architectures. Same model
 
 | | Documentation Site | Analysis Tool |
 |---|---|---|
-| **URL** | [erfan2mohammadi22.github.io/credit-risk-trace](https://erfan2mohammadi22.github.io/credit-risk-trace/) | [credittrace.streamlit.app](https://credittrace.streamlit.app/) |
+| **URL** | [erfan2mohammadi22.github.io/credit-risk-trace](https://erfan2mohammadi22.github.io/credit-risk-trace/) | [credit-risk-trace.streamlit.app](https://credit-risk-trace.streamlit.app/) |
 | **Architecture** | Client-side (WASM) | Server-side (Streamlit Cloud) |
 | **Focus** | Education · Model Card · Journey | Analysis · Portfolio · Batch |
 | **Privacy** | 100% — no data leaves your device | Data sent to server |
@@ -198,7 +198,7 @@ credit-risk-project/
 
 ```bash
 git clone https://github.com/erfan2mohammadi22/credit-risk-trace.git
-cd CreditTrace
+cd credit-risk-trace
 
 cd docs
 python -m http.server 8000
@@ -254,19 +254,23 @@ Training requires approximately 30 GB RAM and 2 to 4 hours.
 ## Tech Stack
 
 **Data and ML**
+
 - pandas, numpy, pyarrow
 - scikit-learn, LightGBM, XGBoost
 - Optuna (hyperparameter tuning)
 
 **Explainability**
+
 - SHAP (TreeExplainer) — both in Python and in the browser
 
 **Deployment**
+
 - Client-side: ONNX Runtime Web (WASM) + Web Worker + Service Worker + SharedArrayBuffer
 - Server-side: Streamlit + Plotly
 - Hosting: GitHub Pages + Streamlit Cloud
 
 **Visualization**
+
 - matplotlib, seaborn (in reports)
 - Plotly (in Streamlit)
 - Custom SVG and CSS (in the documentation site)
