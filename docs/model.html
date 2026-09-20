@@ -342,15 +342,28 @@
         See It in Action
       </h2>
       <p class="text-muted" style="max-width: 600px; margin: 0 auto 2rem;">
-        The model runs entirely in your browser. Enter borrower details
-        and get a prediction — no server, no API calls.
+        Two ways to try the model — pick based on your priority.
       </p>
-      <div class="hero-cta">
-        <a href="demo.html" class="btn btn-lg">
-          Launch Interactive Demo
-          <span style="font-family: var(--font-mono);">→</span>
-        </a>
-        <a href="process.html" class="btn btn-secondary btn-lg">Read the Journey</a>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; max-width: 800px; margin: 0 auto;">
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: left;">
+          <div style="font-family: var(--font-mono); font-size: 1.5rem; margin-bottom: 0.5rem;">🔒</div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; margin-bottom: 0.5rem;">Local Demo (WASM)</h3>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
+            100% private, works offline, runs in your browser.
+          </p>
+          <a href="demo.html" class="btn btn-secondary" style="width: 100%; font-size: 0.85rem;">Launch Local Demo →</a>
+        </div>
+
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: left;">
+          <div style="font-family: var(--font-mono); font-size: 1.5rem; margin-bottom: 0.5rem;">☁️</div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.05rem; margin-bottom: 0.5rem;">Analysis Tool (Streamlit)</h3>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1rem;">
+            Real SHAP, portfolio simulation, counterfactual, batch prediction.
+          </p>
+          <a href="https://credit-risk-trace.streamlit.app/" target="_blank" rel="noopener"
+             class="btn" style="width: 100%; font-size: 0.85rem;">Open Analysis Tool ↗</a>
+        </div>
       </div>
     </div>
   </section>

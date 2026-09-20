@@ -1,22 +1,20 @@
 """
-CreditTrace — Streamlit Edition (Complete)
-------------------------------------------
-The most comprehensive credit risk analysis tool.
+CreditTrace — Streamlit Edition (Complete + Mobile-Optimized)
+-------------------------------------------------------------
+Interactive credit risk analysis using the v5 LightGBM model.
 
 Tabs:
   1. Custom Analysis — SHAP + Counterfactual + Export
   2. Portfolio Simulator — grade distribution → total EL
   3. Compare Borrowers — side-by-side A/B analysis
   4. Batch Prediction — CSV upload → predictions + download
-  5. Model Insights — ROC, confusion matrix, cost analysis
+  5. Model Insights — ROC, cost matrix, threshold optimizer
 
-All HTML rendered via st.html() to avoid markdown parsing issues.
+All HTML rendered via st.html(). Mobile-first responsive CSS.
 """
 
-import base64
 import json
 from datetime import datetime
-from io import StringIO
 from pathlib import Path
 
 import joblib
@@ -63,13 +61,13 @@ GRADE_COLORS = {
 }
 
 GRADE_PROFILES = {
-    "A": {"int_rate": 7.5,  "fico": 810, "annual_inc": 110000, "dti": 10, "loan_amnt": 15000, "term": 36, "revol_util": 20, "emp_length": 8,  "home_ownership": "MORTGAGE", "purpose": "credit_card"},
-    "B": {"int_rate": 11.0, "fico": 760, "annual_inc": 85000,  "dti": 15, "loan_amnt": 14000, "term": 36, "revol_util": 35, "emp_length": 6,  "home_ownership": "MORTGAGE", "purpose": "credit_card"},
-    "C": {"int_rate": 14.5, "fico": 700, "annual_inc": 65000,  "dti": 20, "loan_amnt": 15000, "term": 36, "revol_util": 50, "emp_length": 5,  "home_ownership": "RENT",     "purpose": "debt_consolidation"},
-    "D": {"int_rate": 18.0, "fico": 680, "annual_inc": 60000,  "dti": 25, "loan_amnt": 16000, "term": 36, "revol_util": 60, "emp_length": 4,  "home_ownership": "RENT",     "purpose": "debt_consolidation"},
-    "E": {"int_rate": 21.0, "fico": 660, "annual_inc": 55000,  "dti": 28, "loan_amnt": 18000, "term": 60, "revol_util": 70, "emp_length": 3,  "home_ownership": "RENT",     "purpose": "small_business"},
-    "F": {"int_rate": 24.0, "fico": 645, "annual_inc": 50000,  "dti": 32, "loan_amnt": 20000, "term": 60, "revol_util": 80, "emp_length": 2,  "home_ownership": "RENT",     "purpose": "small_business"},
-    "G": {"int_rate": 27.0, "fico": 630, "annual_inc": 45000,  "dti": 35, "loan_amnt": 22000, "term": 60, "revol_util": 90, "emp_length": 1,  "home_ownership": "RENT",     "purpose": "small_business"},
+    "A": {"int_rate": 7.5,  "fico": 810, "annual_inc": 110000, "dti": 10, "loan_amnt": 15000, "term": 36, "revol_util": 20, "emp_length": 8, "home_ownership": "MORTGAGE", "purpose": "credit_card"},
+    "B": {"int_rate": 11.0, "fico": 760, "annual_inc": 85000,  "dti": 15, "loan_amnt": 14000, "term": 36, "revol_util": 35, "emp_length": 6, "home_ownership": "MORTGAGE", "purpose": "credit_card"},
+    "C": {"int_rate": 14.5, "fico": 700, "annual_inc": 65000,  "dti": 20, "loan_amnt": 15000, "term": 36, "revol_util": 50, "emp_length": 5, "home_ownership": "RENT",     "purpose": "debt_consolidation"},
+    "D": {"int_rate": 18.0, "fico": 680, "annual_inc": 60000,  "dti": 25, "loan_amnt": 16000, "term": 36, "revol_util": 60, "emp_length": 4, "home_ownership": "RENT",     "purpose": "debt_consolidation"},
+    "E": {"int_rate": 21.0, "fico": 660, "annual_inc": 55000,  "dti": 28, "loan_amnt": 18000, "term": 60, "revol_util": 70, "emp_length": 3, "home_ownership": "RENT",     "purpose": "small_business"},
+    "F": {"int_rate": 24.0, "fico": 645, "annual_inc": 50000,  "dti": 32, "loan_amnt": 20000, "term": 60, "revol_util": 80, "emp_length": 2, "home_ownership": "RENT",     "purpose": "small_business"},
+    "G": {"int_rate": 27.0, "fico": 630, "annual_inc": 45000,  "dti": 35, "loan_amnt": 22000, "term": 60, "revol_util": 90, "emp_length": 1, "home_ownership": "RENT",     "purpose": "small_business"},
 }
 
 DEFAULT_WEIGHTS = {"A": 20, "B": 25, "C": 22, "D": 15, "E": 10, "F": 5, "G": 3}
@@ -87,7 +85,7 @@ st.set_page_config(
 
 
 # ============================================
-# Custom CSS
+# Custom CSS (Mobile-Optimized)
 # ============================================
 st.html("""
 <style>
@@ -224,6 +222,9 @@ st.html("""
         margin-top: 0.35rem;
         line-height: 1.1;
         letter-spacing: -0.02em;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        hyphens: auto;
     }
     .metric-value.big { font-size: 1.65rem; }
     .metric-sub {
@@ -292,7 +293,6 @@ st.html("""
     .input-label { color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; }
     .input-value { color: #00d4ff; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 0.72rem; }
 
-    /* Comparison diff bars */
     .diff-row {
         display: grid;
         grid-template-columns: 110px 1fr 110px;
@@ -329,11 +329,132 @@ st.html("""
     #MainMenu { visibility: hidden; }
     header { visibility: hidden; }
 
+    /* ==========================================
+       MOBILE OPTIMIZATIONS
+       ========================================== */
     @media (max-width: 768px) {
-        .hero-title { font-size: 1.9rem; }
-        .kpi-strip { grid-template-columns: repeat(2, 1fr); }
-        .metric-grid { grid-template-columns: 1fr; }
-        .diff-row { grid-template-columns: 80px 1fr 80px; }
+        .block-container {
+            padding-top: 1rem;
+            padding-bottom: 2rem;
+            padding-left: 0.85rem;
+            padding-right: 0.85rem;
+        }
+
+        .hero-wrap { margin-bottom: 1rem; }
+        .hero-badge {
+            font-size: 0.62rem;
+            padding: 5px 10px;
+            margin-bottom: 0.7rem;
+        }
+        .hero-title { font-size: 1.7rem; line-height: 1.15; }
+        .hero-sub { font-size: 0.83rem; line-height: 1.5; }
+
+        .kpi-strip {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin: 1rem 0;
+        }
+        .kpi-item { padding: 0.7rem 0.5rem; border-radius: 10px; }
+        .kpi-label { font-size: 0.54rem; letter-spacing: 0.06em; }
+        .kpi-value { font-size: 1.15rem; margin-top: 0.25rem; }
+
+        .section-title { font-size: 1.12rem; }
+        .section-sub { font-size: 0.78rem; margin-bottom: 0.9rem; line-height: 1.5; }
+
+        .col-header { font-size: 0.63rem; margin-bottom: 0.55rem; }
+
+        .metric-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            margin-top: 0.7rem;
+        }
+        .metric-card {
+            padding: 0.7rem 0.4rem;
+            border-radius: 8px;
+        }
+        .metric-card.big { padding: 0.7rem 0.5rem; }
+        .metric-label { font-size: 0.52rem; letter-spacing: 0.02em; line-height: 1.2; }
+        .metric-value { font-size: 0.95rem; margin-top: 0.25rem; }
+        .metric-value.big { font-size: 1rem; letter-spacing: -0.03em; }
+        .metric-sub { font-size: 0.48rem; margin-top: 0.2rem; }
+
+        .risk-badge { font-size: 0.68rem; padding: 5px 13px; }
+
+        .stButton > button {
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            min-height: 46px;
+        }
+
+        .empty-state { padding: 2.2rem 1.2rem; border-radius: 10px; }
+        .empty-state-icon { font-size: 2.4rem; margin-bottom: 0.8rem; }
+        .empty-state-text { font-size: 0.8rem; line-height: 1.55; }
+
+        .input-summary { padding: 0.7rem 0.8rem; border-radius: 8px; }
+        .input-row {
+            padding: 4px 0;
+            font-size: 0.72rem;
+            flex-wrap: nowrap;
+            gap: 8px;
+        }
+        .input-label { font-size: 0.62rem; flex-shrink: 0; }
+        .input-value { font-size: 0.68rem; text-align: right; }
+
+        .diff-row {
+            grid-template-columns: 70px 1fr 70px;
+            gap: 5px;
+            padding: 4px 0;
+        }
+        .diff-label { font-size: 0.62rem; }
+        .diff-value { font-size: 0.68rem; }
+
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 4px;
+            padding: 5px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
+            display: none;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 6px 11px;
+            font-size: 0.76rem;
+            height: 40px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-title { font-size: 1.45rem; }
+        .hero-sub { font-size: 0.78rem; }
+
+        .kpi-value { font-size: 1rem; }
+        .kpi-label { font-size: 0.5rem; }
+
+        .metric-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+        .metric-card { padding: 0.6rem 0.35rem; }
+        .metric-value { font-size: 0.95rem; }
+        .metric-value.big { font-size: 1.1rem; }
+        .metric-label { font-size: 0.5rem; }
+
+        .diff-row {
+            grid-template-columns: 60px 1fr 60px;
+            gap: 4px;
+        }
+        .diff-value { font-size: 0.62rem; }
+
+        .stTabs [data-baseweb="tab"] {
+            padding: 5px 9px;
+            font-size: 0.7rem;
+            height: 36px;
+        }
     }
 </style>
 """)
@@ -406,7 +527,6 @@ def build_feature_row(values: dict, feature_names: list) -> pd.DataFrame:
 
 
 def build_feature_frame(rows: list, feature_names: list) -> pd.DataFrame:
-    """Build a DataFrame for multiple rows (for batch prediction)."""
     records = []
     for r in rows:
         merged = {**r, **compute_derived_features(r)}
@@ -564,11 +684,11 @@ def make_pd_gauge(pd_value: float) -> go.Figure:
     bar_color = color_map[cls]
     fig = go.Figure(go.Indicator(
         mode="gauge+number", value=pct,
-        number={"suffix": "%", "font": {"size": 46, "color": bar_color, "family": "JetBrains Mono"}},
-        title={"text": "PROBABILITY OF DEFAULT", "font": {"size": 11, "color": COLOR_MUTED}},
+        number={"suffix": "%", "font": {"size": 42, "color": bar_color, "family": "JetBrains Mono"}},
+        title={"text": "PROBABILITY OF DEFAULT", "font": {"size": 10, "color": COLOR_MUTED}},
         gauge={
             "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": COLOR_DIM,
-                     "tickfont": {"size": 9, "color": COLOR_DIM}, "ticksuffix": "%"},
+                     "tickfont": {"size": 8, "color": COLOR_DIM}, "ticksuffix": "%"},
             "bar": {"color": bar_color, "thickness": 0.28},
             "bgcolor": COLOR_BG, "borderwidth": 0,
             "steps": [
@@ -579,7 +699,7 @@ def make_pd_gauge(pd_value: float) -> go.Figure:
             "threshold": {"line": {"color": bar_color, "width": 4}, "thickness": 0.85, "value": pct},
         },
     ))
-    fig.update_layout(height=250, margin=dict(l=20, r=20, t=45, b=10),
+    fig.update_layout(height=230, margin=dict(l=20, r=20, t=40, b=10),
                        paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG)
     return fig
 
@@ -593,18 +713,18 @@ def make_shap_waterfall(shap_items: list) -> go.Figure:
         marker=dict(color=colors, line=dict(width=0)),
         text=[f"{v:+.3f}" for v in impacts],
         textposition="outside",
-        textfont=dict(size=11, color=COLOR_TEXT, family="JetBrains Mono"),
+        textfont=dict(size=10, color=COLOR_TEXT, family="JetBrains Mono"),
         hovertemplate="<b>%{y}</b><br>Impact: %{x:+.4f}<extra></extra>",
     ))
     fig.update_layout(
-        height=max(220, 34 * len(features)),
-        margin=dict(l=10, r=60, t=20, b=20),
+        height=max(200, 30 * len(features)),
+        margin=dict(l=10, r=55, t=15, b=20),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
-        xaxis=dict(title="SHAP value", title_font=dict(size=11, color=COLOR_MUTED),
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
+        xaxis=dict(title="SHAP value", title_font=dict(size=10, color=COLOR_MUTED),
                    gridcolor=COLOR_BORDER, zerolinecolor=COLOR_ACCENT,
-                   zerolinewidth=1, tickfont=dict(size=10, color=COLOR_DIM)),
-        yaxis=dict(tickfont=dict(size=11, color=COLOR_TEXT, family="JetBrains Mono")),
+                   zerolinewidth=1, tickfont=dict(size=9, color=COLOR_DIM)),
+        yaxis=dict(tickfont=dict(size=10, color=COLOR_TEXT, family="JetBrains Mono")),
         showlegend=False,
     )
     return fig
@@ -626,17 +746,17 @@ def make_sensitivity_chart(model, values, feature_names, vary_field, vary_range)
     current = values[vary_field]
     current_pd = predict(model, values, feature_names) * 100
     fig.add_trace(go.Scatter(x=[current], y=[current_pd], mode="markers",
-        marker=dict(size=14, color=COLOR_DANGER, line=dict(color="white", width=2)),
+        marker=dict(size=12, color=COLOR_DANGER, line=dict(color="white", width=2)),
         hovertemplate="Current: %{x}<br>PD: %{y:.2f}%<extra></extra>"))
     fig.update_layout(
-        height=240, margin=dict(l=10, r=20, t=20, b=40),
+        height=220, margin=dict(l=10, r=15, t=15, b=35),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
         xaxis=dict(title=vary_field.replace("_", " ").title(),
-                   title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
-        yaxis=dict(title="PD (%)", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
+                   title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
+        yaxis=dict(title="PD (%)", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
         showlegend=False,
     )
     return fig
@@ -647,9 +767,9 @@ def make_portfolio_donut(distribution: dict) -> go.Figure:
     colors = [GRADE_COLORS[g] for g in labels]
     fig = go.Figure(go.Pie(labels=labels, values=values, hole=0.6,
         marker=dict(colors=colors, line=dict(color=COLOR_BG, width=2)),
-        textinfo="label+percent", textfont=dict(size=12, family="Inter", color=COLOR_TEXT),
+        textinfo="label+percent", textfont=dict(size=11, family="Inter", color=COLOR_TEXT),
         hovertemplate="<b>Grade %{label}</b><br>Loans: %{value}<br>%{percent}<extra></extra>"))
-    fig.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20),
+    fig.update_layout(height=280, margin=dict(l=15, r=15, t=15, b=15),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG, showlegend=False)
     return fig
 
@@ -660,15 +780,15 @@ def make_portfolio_el_bar(portfolio: list) -> go.Figure:
     colors = [GRADE_COLORS[g] for g in grades]
     fig = go.Figure(go.Bar(x=grades, y=els, marker=dict(color=colors, line=dict(width=0)),
         text=[f"${e/1000:.0f}K" if e >= 1000 else f"${e:.0f}" for e in els],
-        textposition="outside", textfont=dict(size=11, color=COLOR_TEXT, family="JetBrains Mono"),
+        textposition="outside", textfont=dict(size=10, color=COLOR_TEXT, family="JetBrains Mono"),
         hovertemplate="<b>Grade %{x}</b><br>EL: $%{y:,.0f}<extra></extra>"))
-    fig.update_layout(height=300, margin=dict(l=20, r=20, t=30, b=30),
+    fig.update_layout(height=280, margin=dict(l=15, r=15, t=25, b=25),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
-        xaxis=dict(title="Grade", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=11, color=COLOR_TEXT)),
-        yaxis=dict(title="Expected Loss ($)", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
+        xaxis=dict(title="Grade", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_TEXT)),
+        yaxis=dict(title="Expected Loss ($)", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
         showlegend=False)
     return fig
 
@@ -679,21 +799,20 @@ def make_portfolio_pd_bar(portfolio: list) -> go.Figure:
     colors = [GRADE_COLORS[g] for g in grades]
     fig = go.Figure(go.Bar(x=grades, y=pds, marker=dict(color=colors, line=dict(width=0)),
         text=[f"{p:.1f}%" for p in pds], textposition="outside",
-        textfont=dict(size=11, color=COLOR_TEXT, family="JetBrains Mono"),
+        textfont=dict(size=10, color=COLOR_TEXT, family="JetBrains Mono"),
         hovertemplate="<b>Grade %{x}</b><br>PD: %{y:.2f}%<extra></extra>"))
-    fig.update_layout(height=300, margin=dict(l=20, r=20, t=30, b=30),
+    fig.update_layout(height=280, margin=dict(l=15, r=15, t=25, b=25),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
-        xaxis=dict(title="Grade", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=11, color=COLOR_TEXT)),
-        yaxis=dict(title="PD (%)", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
+        xaxis=dict(title="Grade", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_TEXT)),
+        yaxis=dict(title="PD (%)", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
         showlegend=False)
     return fig
 
 
 def make_comparison_bars(a_vals: dict, b_vals: dict, fields: list) -> go.Figure:
-    """Grouped bar chart for borrower comparison."""
     fig = go.Figure()
     fig.add_trace(go.Bar(
         name="Borrower A", x=[f[0] for f in fields],
@@ -701,7 +820,7 @@ def make_comparison_bars(a_vals: dict, b_vals: dict, fields: list) -> go.Figure:
         marker=dict(color=COLOR_ACCENT),
         text=[str(a_vals[f[1]]) for f in fields],
         textposition="outside",
-        textfont=dict(size=10, color=COLOR_TEXT, family="JetBrains Mono"),
+        textfont=dict(size=9, color=COLOR_TEXT, family="JetBrains Mono"),
     ))
     fig.add_trace(go.Bar(
         name="Borrower B", x=[f[0] for f in fields],
@@ -709,17 +828,17 @@ def make_comparison_bars(a_vals: dict, b_vals: dict, fields: list) -> go.Figure:
         marker=dict(color=COLOR_PURPLE),
         text=[str(b_vals[f[1]]) for f in fields],
         textposition="outside",
-        textfont=dict(size=10, color=COLOR_TEXT, family="JetBrains Mono"),
+        textfont=dict(size=9, color=COLOR_TEXT, family="JetBrains Mono"),
     ))
     fig.update_layout(
-        height=320, margin=dict(l=20, r=20, t=20, b=40),
+        height=300, margin=dict(l=15, r=15, t=20, b=35),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
         barmode="group", bargap=0.3, bargroupgap=0.1,
         legend=dict(orientation="h", yanchor="bottom", y=1.02,
-                    xanchor="right", x=1, font=dict(color=COLOR_MUTED)),
-        xaxis=dict(gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_TEXT)),
-        yaxis=dict(gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
+                    xanchor="right", x=1, font=dict(color=COLOR_MUTED, size=10)),
+        xaxis=dict(gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_TEXT)),
+        yaxis=dict(gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
     )
     return fig
 
@@ -733,13 +852,13 @@ def make_batch_pd_distribution(pds: np.ndarray) -> go.Figure:
         hovertemplate="PD: %{x:.1f}%<br>Count: %{y}<extra></extra>",
     ))
     fig.update_layout(
-        height=300, margin=dict(l=20, r=20, t=20, b=40),
+        height=280, margin=dict(l=15, r=15, t=15, b=35),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
-        xaxis=dict(title="PD (%)", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
-        yaxis=dict(title="Count", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
+        xaxis=dict(title="PD (%)", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
+        yaxis=dict(title="Count", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
         showlegend=False, bargap=0.05,
     )
     return fig
@@ -756,15 +875,15 @@ def make_roc_curve(fpr: np.ndarray, tpr: np.ndarray, auc_val: float) -> go.Figur
         line=dict(color=COLOR_DIM, width=2, dash="dash"),
         name="Random", hoverinfo="skip"))
     fig.update_layout(
-        height=360, margin=dict(l=20, r=20, t=30, b=40),
+        height=340, margin=dict(l=15, r=15, t=25, b=35),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
-        xaxis=dict(title="False Positive Rate", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM), range=[0, 1]),
-        yaxis=dict(title="True Positive Rate", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM), range=[0, 1]),
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
+        xaxis=dict(title="False Positive Rate", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM), range=[0, 1]),
+        yaxis=dict(title="True Positive Rate", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM), range=[0, 1]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02,
-                    xanchor="right", x=1, font=dict(color=COLOR_MUTED)),
+                    xanchor="right", x=1, font=dict(color=COLOR_MUTED, size=10)),
     )
     return fig
 
@@ -780,15 +899,15 @@ def make_cost_curve(thresholds, total_costs, optimal_t) -> go.Figure:
     fig.add_vline(x=optimal_t, line=dict(color=COLOR_SUCCESS, width=2, dash="dash"),
                   annotation_text=f"Optimal: {optimal_t:.2f}",
                   annotation_position="top",
-                  annotation_font=dict(color=COLOR_SUCCESS))
+                  annotation_font=dict(color=COLOR_SUCCESS, size=10))
     fig.update_layout(
-        height=320, margin=dict(l=20, r=20, t=30, b=40),
+        height=300, margin=dict(l=15, r=15, t=25, b=35),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
-        xaxis=dict(title="Decision Threshold", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
-        yaxis=dict(title="Total Cost ($)", title_font=dict(size=11, color=COLOR_MUTED),
-                   gridcolor=COLOR_BORDER, tickfont=dict(size=10, color=COLOR_DIM)),
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
+        xaxis=dict(title="Decision Threshold", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
+        yaxis=dict(title="Total Cost ($)", title_font=dict(size=10, color=COLOR_MUTED),
+                   gridcolor=COLOR_BORDER, tickfont=dict(size=9, color=COLOR_DIM)),
         showlegend=False,
     )
     return fig
@@ -799,18 +918,18 @@ def make_confusion_heatmap(tp, fp, fn, tn) -> go.Figure:
     text = [[f"TN<br>{tn:,}", f"FP<br>{fp:,}"], [f"FN<br>{fn:,}", f"TP<br>{tp:,}"]]
     fig = go.Figure(go.Heatmap(
         z=z, text=text, texttemplate="%{text}",
-        textfont=dict(size=14, family="JetBrains Mono", color=COLOR_TEXT),
+        textfont=dict(size=13, family="JetBrains Mono", color=COLOR_TEXT),
         colorscale=[[0, "#141b2d"], [1, "#00d4ff"]],
         showscale=False, hoverinfo="skip",
     ))
     fig.update_layout(
-        height=280, margin=dict(l=20, r=20, t=30, b=20),
+        height=260, margin=dict(l=15, r=15, t=25, b=20),
         paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG,
-        font={"family": "Inter, sans-serif", "size": 11, "color": COLOR_TEXT},
-        xaxis=dict(tickvals=[0, 1], ticktext=["Predicted Neg", "Predicted Pos"],
-                   tickfont=dict(size=11, color=COLOR_TEXT), side="bottom"),
-        yaxis=dict(tickvals=[0, 1], ticktext=["Actual Neg", "Actual Pos"],
-                   tickfont=dict(size=11, color=COLOR_TEXT), autorange="reversed"),
+        font={"family": "Inter, sans-serif", "size": 10, "color": COLOR_TEXT},
+        xaxis=dict(tickvals=[0, 1], ticktext=["Pred Neg", "Pred Pos"],
+                   tickfont=dict(size=10, color=COLOR_TEXT), side="bottom"),
+        yaxis=dict(tickvals=[0, 1], ticktext=["Act Neg", "Act Pos"],
+                   tickfont=dict(size=10, color=COLOR_TEXT), autorange="reversed"),
     )
     return fig
 
@@ -849,6 +968,22 @@ st.html("""
         The complete ML audit trail for credit risk.
         Predict, compare, simulate, batch-process, and analyze model behavior.
     </p>
+    <div style="margin-top: 1.2rem; display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap;">
+        <a href="https://erfan2mohammadi22.github.io/credit-risk-trace/" target="_blank" rel="noopener"
+           style="display: inline-flex; align-items: center; gap: 0.4rem;
+                  padding: 8px 16px; background: rgba(0, 212, 255, 0.08);
+                  border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 100px;
+                  font-size: 0.78rem; color: #00d4ff; font-weight: 500;
+                  text-decoration: none; transition: all 0.2s;">
+            Read the Documentation Site →
+        </a>
+        <span style="display: inline-flex; align-items: center; gap: 0.4rem;
+                     padding: 8px 16px; background: #141b2d;
+                     border: 1px solid #1f2937; border-radius: 100px;
+                     font-size: 0.78rem; color: #94a3b8; font-weight: 500;">
+            You are using the Analysis Tool
+        </span>
+    </div>
 </div>
 """)
 
@@ -999,7 +1134,6 @@ with tab_custom:
         st.write("")
         col_exp1, col_exp2 = st.columns(2)
         with col_exp1:
-            # Generate HTML report for download
             report_html = f"""
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>CreditTrace Report</title>
@@ -1045,7 +1179,6 @@ CreditTrace — Credit Risk, Engineered.</p>
                 use_container_width=True,
             )
         with col_exp2:
-            # Generate CSV for download
             csv_rows = [{"field": k, "value": str(v)} for k, v in av.items()]
             csv_rows.append({"field": "predicted_pd", "value": f"{pd_value:.6f}"})
             csv_rows.append({"field": "credit_score", "value": str(credit_score)})
@@ -1297,7 +1430,7 @@ with tab_portfolio:
 # ============================================================
 with tab_compare:
     st.html('<div class="section-title">Compare Two Borrowers</div>')
-    st.html('<div class="section-sub">Side-by-side analysis with visual diffs. Understand what drives different risk levels.</div>')
+    st.html('<div class="section-sub">Side-by-side analysis with visual diffs.</div>')
 
     col_a, col_b = st.columns(2)
 
@@ -1366,44 +1499,40 @@ with tab_compare:
         a_pd, b_pd = data["a_pd"], data["b_pd"]
 
         st.write("")
-        # Headline comparison
         col_head1, col_head2 = st.columns(2)
         with col_head1:
             cls_a = risk_class(a_pd)
             st.html(f"""
-<div style="background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), transparent); border: 1px solid {COLOR_ACCENT}; border-radius: 12px; padding: 1.5rem; text-align: center;">
-    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">Borrower A</div>
-    <div style="font-family: JetBrains Mono; font-size: 3rem; font-weight: 700; color: {COLOR_ACCENT}; line-height: 1; margin: 0.5rem 0;">{a_pd*100:.2f}%</div>
+<div style="background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), transparent); border: 1px solid {COLOR_ACCENT}; border-radius: 12px; padding: 1.2rem; text-align: center;">
+    <div style="font-size: 0.62rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">Borrower A</div>
+    <div style="font-family: JetBrains Mono; font-size: 2.4rem; font-weight: 700; color: {COLOR_ACCENT}; line-height: 1; margin: 0.5rem 0;">{a_pd*100:.2f}%</div>
     <span class="risk-badge {cls_a}">{risk_label(a_pd)}</span>
-    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.75rem;">Credit Score: {pd_to_score(a_pd)}</div>
+    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.6rem;">Score: {pd_to_score(a_pd)}</div>
 </div>
 """)
         with col_head2:
             cls_b = risk_class(b_pd)
             st.html(f"""
-<div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), transparent); border: 1px solid {COLOR_PURPLE}; border-radius: 12px; padding: 1.5rem; text-align: center;">
-    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">Borrower B</div>
-    <div style="font-family: JetBrains Mono; font-size: 3rem; font-weight: 700; color: {COLOR_PURPLE}; line-height: 1; margin: 0.5rem 0;">{b_pd*100:.2f}%</div>
+<div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), transparent); border: 1px solid {COLOR_PURPLE}; border-radius: 12px; padding: 1.2rem; text-align: center;">
+    <div style="font-size: 0.62rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">Borrower B</div>
+    <div style="font-family: JetBrains Mono; font-size: 2.4rem; font-weight: 700; color: {COLOR_PURPLE}; line-height: 1; margin: 0.5rem 0;">{b_pd*100:.2f}%</div>
     <span class="risk-badge {cls_b}">{risk_label(b_pd)}</span>
-    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.75rem;">Credit Score: {pd_to_score(b_pd)}</div>
+    <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.6rem;">Score: {pd_to_score(b_pd)}</div>
 </div>
 """)
 
-        # Delta
         st.write("")
         delta_pd = (b_pd - a_pd) * 100
-        delta_el = (b_pd - a_pd) * LGD * b_vals["loan_amnt"]
         sign = "+" if delta_pd > 0 else ""
         st.html(f"""
 <div style="background: #141b2d; border: 1px solid #1f2937; border-radius: 12px; padding: 1rem; text-align: center;">
-    <div style="font-size: 0.75rem; color: #94a3b8;">Borrower B minus Borrower A</div>
-    <div style="font-family: JetBrains Mono; font-size: 1.5rem; font-weight: 700; color: {COLOR_DANGER if delta_pd > 0 else COLOR_SUCCESS}; margin-top: 0.4rem;">
+    <div style="font-size: 0.72rem; color: #94a3b8;">Borrower B minus Borrower A</div>
+    <div style="font-family: JetBrains Mono; font-size: 1.4rem; font-weight: 700; color: {COLOR_DANGER if delta_pd > 0 else COLOR_SUCCESS}; margin-top: 0.4rem;">
         {sign}{delta_pd:.2f}% PD difference
     </div>
 </div>
 """)
 
-        # Grouped comparison chart
         st.write("")
         st.markdown("**Feature Comparison**")
         fields = [
@@ -1414,7 +1543,6 @@ with tab_compare:
             ("Income ($K)", "annual_inc"),
             ("Loan ($K)", "loan_amnt"),
         ]
-        # Normalize for chart
         a_chart = dict(a_vals); b_chart = dict(b_vals)
         for _, key in fields:
             if key in ("annual_inc", "loan_amnt"):
@@ -1423,7 +1551,6 @@ with tab_compare:
         st.plotly_chart(make_comparison_bars(a_chart, b_chart, fields),
                         use_container_width=True, config={"displayModeBar": False})
 
-        # Diff bars
         st.markdown("**Key Differences**")
         diffs = [
             ("FICO Score", a_vals["fico_range_low"], b_vals["fico_range_low"], ""),
@@ -1447,11 +1574,11 @@ with tab_compare:
 <div class="diff-row">
     <div class="diff-value" style="color: {COLOR_ACCENT}; text-align: right;">{va_str}</div>
     <div>
-        <div style="font-size: 0.65rem; color: #94a3b8; text-align: center; margin-bottom: 3px;">{label} <span style="color: {COLOR_DANGER if delta > 0 else COLOR_SUCCESS}; font-family: JetBrains Mono;">({delta_str})</span></div>
-        <div style="background: #0a0e1a; border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 2px;">
+        <div style="font-size: 0.62rem; color: #94a3b8; text-align: center; margin-bottom: 3px;">{label} <span style="color: {COLOR_DANGER if delta > 0 else COLOR_SUCCESS}; font-family: JetBrains Mono;">({delta_str})</span></div>
+        <div style="background: #0a0e1a; border-radius: 4px; height: 5px; overflow: hidden; margin-bottom: 2px;">
             <div style="width: {a_pct}%; height: 100%; background: {COLOR_ACCENT}; border-radius: 4px;"></div>
         </div>
-        <div style="background: #0a0e1a; border-radius: 4px; height: 6px; overflow: hidden;">
+        <div style="background: #0a0e1a; border-radius: 4px; height: 5px; overflow: hidden;">
             <div style="width: {b_pct}%; height: 100%; background: {COLOR_PURPLE}; border-radius: 4px;"></div>
         </div>
     </div>
@@ -1459,7 +1586,6 @@ with tab_compare:
 </div>
 """)
 
-        # SHAP side by side
         st.write("")
         st.markdown("**SHAP Comparison**")
         col_shap1, col_shap2 = st.columns(2)
@@ -1489,7 +1615,7 @@ with tab_compare:
 # ============================================================
 with tab_batch:
     st.html('<div class="section-title">Batch Prediction</div>')
-    st.html('<div class="section-sub">Upload a CSV with borrower data — get predictions for all rows at once.</div>')
+    st.html('<div class="section-sub">Upload a CSV with borrower data and get predictions for all rows at once.</div>')
 
     st.markdown("**1. Download the template**")
     template_rows = []
@@ -1537,11 +1663,8 @@ with tab_batch:
             with st.expander("Preview uploaded data"):
                 st.dataframe(batch_df.head(10), use_container_width=True)
 
-            # Required cols
-            required_cols = [
-                "loan_amnt", "term", "int_rate", "grade", "sub_grade",
-                "annual_inc", "dti", "fico_range_low",
-            ]
+            required_cols = ["loan_amnt", "term", "int_rate", "grade", "sub_grade",
+                             "annual_inc", "dti", "fico_range_low"]
             missing = [c for c in required_cols if c not in batch_df.columns]
             if missing:
                 st.error(f"Missing required columns: {', '.join(missing)}")
@@ -1550,11 +1673,9 @@ with tab_batch:
 
                 if run_batch:
                     with st.spinner(f"Predicting {len(batch_df)} rows..."):
-                        # Build rows
                         rows_for_model = []
                         for _, row in batch_df.iterrows():
                             d = row.to_dict()
-                            # Fill defaults for missing fields
                             d.setdefault("emp_length", 5)
                             d.setdefault("home_ownership", "RENT")
                             d.setdefault("verification_status", "Verified")
@@ -1577,14 +1698,12 @@ with tab_batch:
 
                         pds = predict_batch(model, rows_for_model, feature_names)
 
-                    # Add results
                     results_df = batch_df.copy()
                     results_df["predicted_pd"] = pds
                     results_df["credit_score"] = [pd_to_score(p) for p in pds]
                     results_df["risk_level"] = [risk_label(p) for p in pds]
                     results_df["expected_loss"] = pds * LGD * results_df["loan_amnt"]
 
-                    # Summary
                     total_exposure = results_df["loan_amnt"].sum()
                     total_el = results_df["expected_loss"].sum()
                     high_risk_count = (pds > 0.30).sum()
@@ -1611,7 +1730,6 @@ with tab_batch:
                     st.plotly_chart(make_batch_pd_distribution(pds),
                                     use_container_width=True, config={"displayModeBar": False})
 
-                    # Results table
                     st.markdown("**Results Preview**")
                     st.dataframe(
                         results_df[["loan_amnt", "int_rate", "grade", "fico_range_low",
@@ -1619,7 +1737,6 @@ with tab_batch:
                         use_container_width=True,
                     )
 
-                    # Download
                     result_csv = results_df.to_csv(index=False)
                     st.download_button(
                         "📥 Download Full Results CSV",
@@ -1650,10 +1767,8 @@ with tab_insights:
     st.html('<div class="section-title">Model Insights</div>')
     st.html('<div class="section-sub">Understand model behavior, threshold trade-offs, and cost analysis.</div>')
 
-    # Generate a synthetic validation set for ROC / cost analysis
     @st.cache_data(show_spinner=False)
     def generate_validation_set(_model, feature_names_tuple: tuple, n: int = 500) -> tuple:
-        """Generate a synthetic validation set covering a wide range of profiles."""
         feature_names = list(feature_names_tuple)
         rng = np.random.default_rng(42)
         rows = []
@@ -1687,7 +1802,6 @@ with tab_insights:
             d["installment"] = round(loan_amnt * r / (1 - (1 + r) ** (-term)))
             rows.append(d)
         pds = predict_batch(_model, rows, feature_names)
-        # Simulate ground truth using PD as a Bernoulli probability (calibrated)
         y_true = (rng.random(n) < pds).astype(int)
         return pds, y_true
 
@@ -1719,18 +1833,16 @@ with tab_insights:
 </div>
 """)
 
-    # Threshold simulator
     st.write("")
     st.markdown("**Threshold & Cost Analysis**")
     st.caption("Adjust the cost of errors to find the optimal decision threshold.")
 
     col_c1, col_c2 = st.columns(2)
     with col_c1:
-        cost_fp = st.slider("Cost of False Positive (rejecting good borrower) $", 100, 10000, 500, 100, key="cost_fp")
+        cost_fp = st.slider("Cost of False Positive (rejecting good) $", 100, 10000, 500, 100, key="cost_fp")
     with col_c2:
-        cost_fn = st.slider("Cost of False Negative (accepting bad borrower) $", 500, 50000, 5000, 500, key="cost_fn")
+        cost_fn = st.slider("Cost of False Negative (accepting bad) $", 500, 50000, 5000, 500, key="cost_fn")
 
-    # Compute confusion matrix for each threshold
     thresh_grid = np.linspace(0.01, 0.99, 99)
     total_costs = []
     for t in thresh_grid:
@@ -1748,7 +1860,6 @@ with tab_insights:
     st.plotly_chart(make_cost_curve(thresh_grid, total_costs, optimal_t),
                     use_container_width=True, config={"displayModeBar": False})
 
-    # Confusion matrix at optimal threshold
     y_pred_opt = (val_pds >= optimal_t).astype(int)
     tp = int(((y_pred_opt == 1) & (val_y == 1)).sum())
     fp = int(((y_pred_opt == 1) & (val_y == 0)).sum())
@@ -1782,7 +1893,6 @@ with tab_insights:
 </div>
 """)
 
-    # Model info
     st.write("")
     st.markdown("**Model Card**")
     st.html(f"""
@@ -1795,9 +1905,9 @@ with tab_insights:
     <div class="input-row"><span class="input-label">Trees</span><span class="input-value">{model.num_trees():,}</span></div>
     <div class="input-row"><span class="input-label">Training Rows</span><span class="input-value">1,078,479</span></div>
     <div class="input-row"><span class="input-label">Default Rate</span><span class="input-value">19.98%</span></div>
-    <div class="input-row"><span class="input-label">Calibration</span><span class="input-value" style="color: {COLOR_SUCCESS};">✓ Perfect (19.98% = 19.98%)</span></div>
-    <div class="input-row"><span class="input-label">Leakage</span><span class="input-value" style="color: {COLOR_SUCCESS};">✓ Removed</span></div>
-    <div class="input-row"><span class="input-label">Fairness</span><span class="input-value" style="color: {COLOR_SUCCESS};">✓ addr_state removed</span></div>
+    <div class="input-row"><span class="input-label">Calibration</span><span class="input-value" style="color: {COLOR_SUCCESS};">Perfect</span></div>
+    <div class="input-row"><span class="input-label">Leakage</span><span class="input-value" style="color: {COLOR_SUCCESS};">Removed</span></div>
+    <div class="input-row"><span class="input-label">Fairness</span><span class="input-value" style="color: {COLOR_SUCCESS};">addr_state removed</span></div>
 </div>
 """)
 
