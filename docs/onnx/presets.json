@@ -1,0 +1,294 @@
+{
+  "meta": {
+    "generated_at": "2026-09-20T07:27:35.548394Z",
+    "model": "lightgbm_v5",
+    "auc": 0.7287,
+    "n_features": 41,
+    "lgd": 0.45,
+    "cost_of_funds": 0.02,
+    "operating_cost": 0.01,
+    "profit_margin": 0.03
+  },
+  "presets": {
+    "excellent": {
+      "name": "Excellent",
+      "emoji": "🌟",
+      "inputs": {
+        "loan_amnt": 10000,
+        "term": 36,
+        "int_rate": 6.5,
+        "grade": "A",
+        "sub_grade": "A1",
+        "annual_inc": 150000,
+        "dti": 5,
+        "fico_range_low": 810,
+        "home_ownership": "MORTGAGE",
+        "purpose": "debt_consolidation",
+        "emp_length": 10,
+        "revol_util": 10
+      },
+      "pd": 0.013028,
+      "credit_score": 850,
+      "el": 58.63,
+      "el_rate": 0.005863,
+      "min_rate": 6.59,
+      "lgd": 0.45,
+      "shap_top": [
+        {
+          "feature": "sub_grade",
+          "value": "A1",
+          "impact": -0.670087
+        },
+        {
+          "feature": "fico_range_low",
+          "value": "810",
+          "impact": -0.429919
+        },
+        {
+          "feature": "grade",
+          "value": "A",
+          "impact": -0.332497
+        },
+        {
+          "feature": "int_rate",
+          "value": 6.5,
+          "impact": -0.244964
+        },
+        {
+          "feature": "dti",
+          "value": "5",
+          "impact": -0.229656
+        },
+        {
+          "feature": "revol_util",
+          "value": "10",
+          "impact": -0.209482
+        }
+      ]
+    },
+    "good": {
+      "name": "Good",
+      "emoji": "🟢",
+      "inputs": {
+        "loan_amnt": 12000,
+        "term": 36,
+        "int_rate": 10.5,
+        "grade": "B",
+        "sub_grade": "B2",
+        "annual_inc": 85000,
+        "dti": 12,
+        "fico_range_low": 740,
+        "home_ownership": "MORTGAGE",
+        "purpose": "credit_card",
+        "emp_length": 7,
+        "revol_util": 30
+      },
+      "pd": 0.055456,
+      "credit_score": 755,
+      "el": 299.46,
+      "el_rate": 0.024955,
+      "min_rate": 8.5,
+      "lgd": 0.45,
+      "shap_top": [
+        {
+          "feature": "sub_grade",
+          "value": "B2",
+          "impact": -0.376274
+        },
+        {
+          "feature": "fico_range_low",
+          "value": "740",
+          "impact": -0.146818
+        },
+        {
+          "feature": "int_rate",
+          "value": 10.5,
+          "impact": 0.143159
+        },
+        {
+          "feature": "dti",
+          "value": "12",
+          "impact": -0.138301
+        },
+        {
+          "feature": "home_ownership",
+          "value": "MORTGAGE",
+          "impact": -0.115256
+        },
+        {
+          "feature": "grade",
+          "value": "B",
+          "impact": -0.10235
+        }
+      ]
+    },
+    "average": {
+      "name": "Average",
+      "emoji": "🟡",
+      "inputs": {
+        "loan_amnt": 15000,
+        "term": 36,
+        "int_rate": 14.5,
+        "grade": "C",
+        "sub_grade": "C3",
+        "annual_inc": 60000,
+        "dti": 20,
+        "fico_range_low": 690,
+        "home_ownership": "RENT",
+        "purpose": "debt_consolidation",
+        "emp_length": 4,
+        "revol_util": 55
+      },
+      "pd": 0.169346,
+      "credit_score": 657,
+      "el": 1143.08,
+      "el_rate": 0.076206,
+      "min_rate": 13.62,
+      "lgd": 0.45,
+      "shap_top": [
+        {
+          "feature": "term",
+          "value": "36",
+          "impact": -0.154113
+        },
+        {
+          "feature": "home_ownership",
+          "value": "RENT",
+          "impact": 0.10601
+        },
+        {
+          "feature": "grade",
+          "value": "C",
+          "impact": 0.079736
+        },
+        {
+          "feature": "inq_last_6mths",
+          "value": "0",
+          "impact": -0.068049
+        },
+        {
+          "feature": "mort_acc",
+          "value": "0",
+          "impact": 0.067678
+        },
+        {
+          "feature": "emp_length",
+          "value": "4",
+          "impact": -0.051358
+        }
+      ]
+    },
+    "risky": {
+      "name": "Risky",
+      "emoji": "🟠",
+      "inputs": {
+        "loan_amnt": 20000,
+        "term": 60,
+        "int_rate": 20.5,
+        "grade": "E",
+        "sub_grade": "E3",
+        "annual_inc": 45000,
+        "dti": 28,
+        "fico_range_low": 655,
+        "home_ownership": "RENT",
+        "purpose": "small_business",
+        "emp_length": 2,
+        "revol_util": 75
+      },
+      "pd": 0.703401,
+      "credit_score": 461,
+      "el": 6330.61,
+      "el_rate": 0.31653,
+      "min_rate": 37.65,
+      "lgd": 0.45,
+      "shap_top": [
+        {
+          "feature": "sub_grade",
+          "value": "E3",
+          "impact": 0.515663
+        },
+        {
+          "feature": "purpose",
+          "value": "small_business",
+          "impact": 0.394269
+        },
+        {
+          "feature": "term",
+          "value": "60",
+          "impact": 0.391295
+        },
+        {
+          "feature": "grade",
+          "value": "E",
+          "impact": 0.211494
+        },
+        {
+          "feature": "fico_range_low",
+          "value": "655",
+          "impact": 0.208117
+        },
+        {
+          "feature": "dti",
+          "value": "28",
+          "impact": 0.171399
+        }
+      ]
+    },
+    "very_risky": {
+      "name": "Very Risky",
+      "emoji": "🔴",
+      "inputs": {
+        "loan_amnt": 25000,
+        "term": 60,
+        "int_rate": 26.5,
+        "grade": "F",
+        "sub_grade": "F4",
+        "annual_inc": 32000,
+        "dti": 35,
+        "fico_range_low": 640,
+        "home_ownership": "RENT",
+        "purpose": "small_business",
+        "emp_length": 1,
+        "revol_util": 92
+      },
+      "pd": 0.772801,
+      "credit_score": 432,
+      "el": 8694.01,
+      "el_rate": 0.34776,
+      "min_rate": 40.78,
+      "lgd": 0.45,
+      "shap_top": [
+        {
+          "feature": "sub_grade",
+          "value": "F4",
+          "impact": 0.588988
+        },
+        {
+          "feature": "term",
+          "value": "60",
+          "impact": 0.335686
+        },
+        {
+          "feature": "purpose",
+          "value": "small_business",
+          "impact": 0.309651
+        },
+        {
+          "feature": "grade",
+          "value": "F",
+          "impact": 0.273851
+        },
+        {
+          "feature": "dti",
+          "value": "35",
+          "impact": 0.217514
+        },
+        {
+          "feature": "loan_income_ratio",
+          "value": 0.781,
+          "impact": 0.184062
+        }
+      ]
+    }
+  }
+}

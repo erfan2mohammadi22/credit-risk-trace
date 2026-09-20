@@ -1,0 +1,67 @@
+# ============================================
+# CreditTrace — .gitignore
+# ============================================
+
+# --- Virtual Environment ---
+venv/
+env/
+.venv/
+ENV/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Data (too large for GitHub) ---
+data/raw/
+data/processed/
+*.csv
+*.csv.gz
+*.parquet
+*.gz
+
+# --- Models (large binary files, can be regenerated) ---
+models/*.joblib
+models/archive_*/
+!models/.gitkeep
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+notebooks/*
+!notebooks/.gitkeep
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Reports (keep JSON summaries, ignore large archives) ---
+reports/archive_*/
+!reports/*.json
+!reports/figures/
+
+# --- Logs & Temp ---
+*.log
+check_model.py
+temp/
+tmp/
+
+# --- Tests cache ---
+tests/__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/

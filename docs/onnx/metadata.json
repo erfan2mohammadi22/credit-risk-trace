@@ -1,0 +1,388 @@
+{
+  "model_file": "model.onnx",
+  "n_features": 41,
+  "feature_names": [
+    "loan_amnt",
+    "term",
+    "int_rate",
+    "grade",
+    "sub_grade",
+    "emp_length",
+    "home_ownership",
+    "annual_inc",
+    "verification_status",
+    "purpose",
+    "dti",
+    "delinq_2yrs",
+    "fico_range_low",
+    "fico_range_high",
+    "inq_last_6mths",
+    "mths_since_last_delinq",
+    "open_acc",
+    "pub_rec",
+    "revol_bal",
+    "revol_util",
+    "total_acc",
+    "application_type",
+    "mort_acc",
+    "pub_rec_bankruptcies",
+    "mths_since_last_delinq_missing",
+    "emp_length_missing",
+    "mort_acc_missing",
+    "credit_history_months",
+    "loan_income_ratio",
+    "monthly_income",
+    "installment_to_income",
+    "balance_per_account",
+    "delinq_per_account",
+    "log_annual_inc",
+    "log_revol_bal",
+    "log_loan_amnt",
+    "fico_avg",
+    "fico_range",
+    "total_credit_lines",
+    "has_delinq",
+    "has_bankruptcy"
+  ],
+  "categorical_features": [
+    "grade",
+    "sub_grade",
+    "home_ownership",
+    "verification_status",
+    "purpose",
+    "application_type"
+  ],
+  "category_mappings": {
+    "grade": {
+      "A": 0,
+      "B": 1,
+      "C": 2,
+      "D": 3,
+      "E": 4,
+      "F": 5,
+      "G": 6
+    },
+    "sub_grade": {
+      "A1": 0,
+      "A2": 1,
+      "A3": 2,
+      "A4": 3,
+      "A5": 4,
+      "B1": 5,
+      "B2": 6,
+      "B3": 7,
+      "B4": 8,
+      "B5": 9,
+      "C1": 10,
+      "C2": 11,
+      "C3": 12,
+      "C4": 13,
+      "C5": 14,
+      "D1": 15,
+      "D2": 16,
+      "D3": 17,
+      "D4": 18,
+      "D5": 19,
+      "E1": 20,
+      "E2": 21,
+      "E3": 22,
+      "E4": 23,
+      "E5": 24,
+      "F1": 25,
+      "F2": 26,
+      "F3": 27,
+      "F4": 28,
+      "F5": 29,
+      "G1": 30,
+      "G2": 31,
+      "G3": 32,
+      "G4": 33,
+      "G5": 34
+    },
+    "home_ownership": {
+      "ANY": 0,
+      "MORTGAGE": 1,
+      "NONE": 2,
+      "OTHER": 3,
+      "OWN": 4,
+      "RENT": 5
+    },
+    "verification_status": {
+      "Not Verified": 0,
+      "Source Verified": 1,
+      "Verified": 2
+    },
+    "purpose": {
+      "car": 0,
+      "credit_card": 1,
+      "debt_consolidation": 2,
+      "educational": 3,
+      "home_improvement": 4,
+      "house": 5,
+      "major_purchase": 6,
+      "medical": 7,
+      "moving": 8,
+      "other": 9,
+      "renewable_energy": 10,
+      "small_business": 11,
+      "vacation": 12,
+      "wedding": 13
+    },
+    "application_type": {
+      "Individual": 0,
+      "Joint App": 1
+    }
+  },
+  "feature_ranges": {
+    "loan_amnt": {
+      "min": 500.0,
+      "max": 40000.0,
+      "mean": 14408.998046875,
+      "median": 12000.0
+    },
+    "term": {
+      "min": 36.0,
+      "max": 60.0,
+      "mean": 41.784019470214844,
+      "median": 36.0
+    },
+    "int_rate": {
+      "min": 5.309999942779541,
+      "max": 30.989999771118164,
+      "mean": 13.241561889648438,
+      "median": 12.739999771118164
+    },
+    "grade": {
+      "min": 0.0,
+      "max": 6.0,
+      "mean": 1.7483679056167603,
+      "median": 2.0
+    },
+    "sub_grade": {
+      "min": 0.0,
+      "max": 34.0,
+      "mean": 10.705964088439941,
+      "median": 10.0
+    },
+    "emp_length": {
+      "min": 0.0,
+      "max": 10.0,
+      "mean": 5.962054252624512,
+      "median": 6.0
+    },
+    "home_ownership": {
+      "min": 0.0,
+      "max": 5.0,
+      "mean": 2.9123284816741943,
+      "median": 4.0
+    },
+    "annual_inc": {
+      "min": 1.0,
+      "max": 10999200.0,
+      "mean": 76258.1640625,
+      "median": 65000.0
+    },
+    "verification_status": {
+      "min": 0.0,
+      "max": 2.0,
+      "mean": 1.0084844827651978,
+      "median": 1.0
+    },
+    "purpose": {
+      "min": 0.0,
+      "max": 13.0,
+      "mean": 2.6963391304016113,
+      "median": 2.0
+    },
+    "dti": {
+      "min": 0.0,
+      "max": 100.0,
+      "mean": 18.17618751525879,
+      "median": 17.600000381469727
+    },
+    "delinq_2yrs": {
+      "min": 0.0,
+      "max": 39.0,
+      "mean": 0.31763261556625366,
+      "median": 0.0
+    },
+    "fico_range_low": {
+      "min": 610.0,
+      "max": 845.0,
+      "mean": 696.1622314453125,
+      "median": 690.0
+    },
+    "fico_range_high": {
+      "min": 614.0,
+      "max": 850.0,
+      "mean": 700.162353515625,
+      "median": 694.0
+    },
+    "inq_last_6mths": {
+      "min": 0.0,
+      "max": 33.0,
+      "mean": 0.6622042059898376,
+      "median": 0.0
+    },
+    "mths_since_last_delinq": {
+      "min": 0.0,
+      "max": 226.0,
+      "mean": 34.29512023925781,
+      "median": 31.0
+    },
+    "open_acc": {
+      "min": 0.0,
+      "max": 90.0,
+      "mean": 11.590447425842285,
+      "median": 11.0
+    },
+    "pub_rec": {
+      "min": 0.0,
+      "max": 86.0,
+      "mean": 0.21504966914653778,
+      "median": 0.0
+    },
+    "revol_bal": {
+      "min": 0.0,
+      "max": 2904836.0,
+      "mean": 16270.71484375,
+      "median": 11130.0
+    },
+    "revol_util": {
+      "min": 0.0,
+      "max": 148.0,
+      "mean": 51.80964660644531,
+      "median": 52.20000076293945
+    },
+    "total_acc": {
+      "min": 1.0,
+      "max": 176.0,
+      "mean": 24.975988388061523,
+      "median": 23.0
+    },
+    "application_type": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.01914251036942005,
+      "median": 0.0
+    },
+    "mort_acc": {
+      "min": 0.0,
+      "max": 51.0,
+      "mean": 1.6707686185836792,
+      "median": 1.0
+    },
+    "pub_rec_bankruptcies": {
+      "min": 0.0,
+      "max": 12.0,
+      "mean": 0.1343628317117691,
+      "median": 0.0
+    },
+    "mths_since_last_delinq_missing": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.5043843388557434,
+      "median": 1.0
+    },
+    "emp_length_missing": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.05826723575592041,
+      "median": 0.0
+    },
+    "mort_acc_missing": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.037111517041921616,
+      "median": 0.0
+    },
+    "credit_history_months": {
+      "min": 6.0,
+      "max": 999.0,
+      "mean": 195.00599670410156,
+      "median": 177.0
+    },
+    "loan_income_ratio": {
+      "min": 0.00017142854630947113,
+      "max": 20000.0,
+      "mean": 0.3085007667541504,
+      "median": 0.19999487698078156
+    },
+    "monthly_income": {
+      "min": 0.0833333358168602,
+      "max": 916600.0,
+      "mean": 6354.84716796875,
+      "median": 5416.66650390625
+    },
+    "installment_to_income": {
+      "min": 6.91198802087456e-05,
+      "max": 1015.9938354492188,
+      "mean": 0.08525063842535019,
+      "median": 0.07213133573532104
+    },
+    "balance_per_account": {
+      "min": 0.0,
+      "max": 290483.59375,
+      "mean": 1343.3345947265625,
+      "median": 947.2222290039062
+    },
+    "delinq_per_account": {
+      "min": 0.0,
+      "max": 1.1111111640930176,
+      "mean": 0.01259635016322136,
+      "median": 0.0
+    },
+    "log_annual_inc": {
+      "min": 0.6931471824645996,
+      "max": 16.213333129882812,
+      "mean": 11.084571838378906,
+      "median": 11.082158088684082
+    },
+    "log_revol_bal": {
+      "min": 0.0,
+      "max": 14.881887435913086,
+      "mean": 9.191189765930176,
+      "median": 9.317489624023438
+    },
+    "log_loan_amnt": {
+      "min": 6.216606140136719,
+      "max": 10.596659660339355,
+      "mean": 9.366116523742676,
+      "median": 9.392745018005371
+    },
+    "fico_avg": {
+      "min": 612.0,
+      "max": 847.5,
+      "mean": 698.1622924804688,
+      "median": 692.0
+    },
+    "fico_range": {
+      "min": 4.0,
+      "max": 5.0,
+      "mean": 4.000137805938721,
+      "median": 4.0
+    },
+    "total_credit_lines": {
+      "min": 0.0,
+      "max": 92.0,
+      "mean": 13.199246406555176,
+      "median": 12.0
+    },
+    "has_delinq": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.1926223486661911,
+      "median": 0.0
+    },
+    "has_bankruptcy": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.12449753284454346,
+      "median": 0.0
+    }
+  },
+  "verification": {
+    "max_abs_diff_lgb_vs_onnx": 5.468944227482453e-07,
+    "verified": true
+  }
+}

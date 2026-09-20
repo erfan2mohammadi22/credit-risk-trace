@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>The Process — CreditTrace</title>
+  <meta name="description" content="Six model iterations, one critical discovery. The full story of how SHAP analysis uncovered temporal leakage and why we chose to sacrifice 1% AUC for fairness.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <a href="index.html" class="logo">CreditTrace</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="demo.html">Demo</a>
+      <a href="model.html">Model</a>
+      <a href="data.html">Data</a>
+      <a href="process.html" class="active">Process</a>
+      <a href="concepts.html">Concepts</a>
+    </nav>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="section" style="padding-bottom: 2rem;">
+    <div class="container text-center">
+      <div class="hero-badge" style="margin-bottom: 1rem;">
+        <span class="hero-badge-dot"></span>
+        The Journey · v1 → v6
+      </div>
+      <h1 style="font-family: var(--font-heading); font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -1.5px; margin-bottom: 1rem;">
+        Six Versions, <span class="gradient">One Discovery</span>
+      </h1>
+      <p class="text-muted" style="max-width: 680px; margin: 0 auto;">
+        The story of how a model with AUC = 0.7363 became a production-ready
+        model with AUC = 0.7287 — and why that 1% difference matters more
+        than the number itself.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ TIMELINE OVERVIEW ============ -->
+  <section class="section" style="padding-top: 1rem;">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>The Arc</h2>
+        <p>From baseline to breakthrough — and back down, on purpose.</p>
+      </div>
+
+      <div class="preview-wrap reveal" style="background: var(--card); padding: 2rem;">
+        <div style="display: grid; gap: 1.25rem;">
+          <div style="display: grid; grid-template-columns: 100px 1fr 80px; gap: 1rem; align-items: center;">
+            <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem;">v1 · baseline</div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; position: relative;">
+              <div style="width: 62%; height: 100%; background: linear-gradient(90deg, var(--accent-dark), var(--accent)); border-radius: 3px;"></div>
+            </div>
+            <div style="font-family: var(--font-mono); text-align: right; font-size: 0.9rem;">0.7349</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 100px 1fr 80px; gap: 1rem; align-items: center;">
+            <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem;">v2 · Optuna</div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; position: relative;">
+              <div style="width: 65%; height: 100%; background: linear-gradient(90deg, var(--accent-dark), var(--accent)); border-radius: 3px;"></div>
+            </div>
+            <div style="font-family: var(--font-mono); text-align: right; font-size: 0.9rem;">0.7357</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 100px 1fr 80px; gap: 1rem; align-items: center;">
+            <div style="font-family: var(--font-mono); color: var(--danger); font-size: 0.85rem;">v3 ⚠️</div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; position: relative;">
+              <div style="width: 68%; height: 100%; background: linear-gradient(90deg, #b91c1c, var(--danger)); border-radius: 3px;"></div>
+            </div>
+            <div style="font-family: var(--font-mono); text-align: right; font-size: 0.9rem; color: var(--danger);">0.7363</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 100px 1fr 80px; gap: 1rem; align-items: center;">
+            <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem;">v4 · clean</div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; position: relative;">
+              <div style="width: 56%; height: 100%; background: linear-gradient(90deg, var(--text-dim), var(--text-muted)); border-radius: 3px;"></div>
+            </div>
+            <div style="font-family: var(--font-mono); text-align: right; font-size: 0.9rem;">0.7286</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 100px 1fr 80px; gap: 1rem; align-items: center;">
+            <div style="font-family: var(--font-mono); color: var(--success); font-size: 0.85rem; font-weight: 700;">v5 ✅</div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; position: relative;">
+              <div style="width: 57%; height: 100%; background: linear-gradient(90deg, #00a854, var(--success)); border-radius: 3px; box-shadow: 0 0 12px rgba(0, 230, 118, 0.5);"></div>
+            </div>
+            <div style="font-family: var(--font-mono); text-align: right; font-size: 0.9rem; color: var(--success); font-weight: 700;">0.7287</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 100px 1fr 80px; gap: 1rem; align-items: center;">
+            <div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.85rem;">v6 · efficient</div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; position: relative;">
+              <div style="width: 56%; height: 100%; background: linear-gradient(90deg, #059669, var(--success)); border-radius: 3px;"></div>
+            </div>
+            <div style="font-family: var(--font-mono); text-align: right; font-size: 0.9rem;">0.7283</div>
+          </div>
+        </div>
+
+        <p class="text-dim text-center mt-3" style="font-size: 0.8rem; margin-bottom: 0;">
+          Bars scaled to AUC range [0.725 – 0.737]
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 1: THE BASELINE ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 01</span>
+        <h2 style="margin-top: 0.5rem;">The Baseline</h2>
+        <p>Every project starts somewhere. Ours started with three models and a simple question: what does the data say?</p>
+      </div>
+
+      <div class="card reveal">
+        <p class="text-muted" style="margin-bottom: 1.25rem;">
+          We trained three models on the full dataset — all 47 engineered features,
+          including <code class="mono">issue_year</code> and <code class="mono">addr_state</code>.
+        </p>
+
+        <div class="metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+          <div class="metric">
+            <div class="metric-label">Logistic Regression</div>
+            <div class="metric-value" style="font-size: 1.4rem;">0.7146</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">XGBoost</div>
+            <div class="metric-value" style="font-size: 1.4rem;">0.7295</div>
+          </div>
+          <div class="metric" style="border-color: var(--accent);">
+            <div class="metric-label" style="color: var(--accent);">LightGBM (5-Fold)</div>
+            <div class="metric-value" style="font-size: 1.4rem;">0.7349</div>
+          </div>
+        </div>
+
+        <p class="text-muted mt-2" style="font-size: 0.95rem;">
+          LightGBM was the clear winner — its native categorical support and
+          histogram-based splits worked well with our mixed data. But 0.7349
+          was not enough. We wanted to know what tuning could do.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 2: OPTUNA ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 02</span>
+        <h2 style="margin-top: 0.5rem;">Optuna Tuning</h2>
+        <p>30 trials, median pruning, and a few hours of compute.</p>
+      </div>
+
+      <div class="card reveal">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; align-items: center;">
+          <div>
+            <div class="metric-label">Best Trial</div>
+            <div style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: var(--accent); line-height: 1;">
+              #17
+            </div>
+          </div>
+          <div>
+            <div class="metric-label">Tuning AUC (subsample)</div>
+            <div style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: var(--accent); line-height: 1;">
+              0.7357
+            </div>
+          </div>
+        </div>
+
+        <p class="text-muted mt-3" style="font-size: 0.95rem;">
+          We tuned on a 25% subsample with 3-fold CV for speed, then
+          re-trained on the full dataset. The improvement was modest —
+          <strong>+0.0008 AUC</strong> — but every basis point counts in credit risk.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 3: THE DISCOVERY ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--danger); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 03</span>
+        <h2 style="margin-top: 0.5rem;">The Discovery</h2>
+        <p>AUC = 0.7363 looked great. SHAP told a different story.</p>
+      </div>
+
+      <div class="card reveal" style="border-left: 3px solid var(--danger);">
+        <h3 style="margin-bottom: 1rem;">The third most important feature had nothing to do with the borrower</h3>
+
+        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 1.5rem;">
+          We ran SHAP on v3 to understand what the model had learned.
+          The result was striking.
+        </p>
+
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 400px;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-light);">
+                <th style="padding: 0.6rem 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Rank</th>
+                <th style="padding: 0.6rem 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Feature</th>
+                <th style="padding: 0.6rem 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">SHAP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">1</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">sub_grade</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">0.27</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">2</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">term</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">0.18</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border); background: rgba(255, 82, 82, 0.08);">
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono); color: var(--danger); font-weight: 700;">3</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono); color: var(--danger); font-weight: 700;">issue_year ⚠️</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono); color: var(--danger); font-weight: 700;">0.17</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">4</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">grade</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">0.13</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">5</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">dti</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">0.11</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">6</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">home_ownership</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono);">0.11</td>
+              </tr>
+              <tr style="background: rgba(255, 171, 0, 0.08);">
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono); color: var(--warning); font-weight: 700;">7</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono); color: var(--warning); font-weight: 700;">addr_state ⚠️</td>
+                <td style="padding: 0.6rem 0.75rem; font-family: var(--font-mono); color: var(--warning); font-weight: 700;">0.10</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="status status-error mt-3" style="margin-bottom: 0;">
+          <strong>Temporal leakage detected:</strong> <code class="mono">issue_year</code> learned
+          that 2015–2017 had higher default rates — a macro-economic pattern,
+          not a borrower signal. It would not generalize to future data.
+        </div>
+      </div>
+
+      <div class="preview-wrap reveal mt-3">
+        <img src="figures/07_shap_dependence.png" alt="SHAP dependence — leakage features">
+        <div class="preview-badge">SHAP dependence · top features (v3, with leakage)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 4: THE DECISION ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--warning); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 04</span>
+        <h2 style="margin-top: 0.5rem;">The Decision</h2>
+        <p>Removing leakage cost us 1% AUC. It was the right call.</p>
+      </div>
+
+      <div class="card reveal">
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.5rem; align-items: center;">
+          <div style="text-align: center;">
+            <div class="metric-label">v3 (with leakage)</div>
+            <div style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: var(--danger); line-height: 1;">
+              0.7363
+            </div>
+            <div class="text-dim" style="font-size: 0.75rem; margin-top: 0.5rem;">47 features</div>
+          </div>
+          <div style="font-size: 2rem; color: var(--text-dim); font-family: var(--font-mono);">→</div>
+          <div style="text-align: center;">
+            <div class="metric-label">v4 (clean)</div>
+            <div style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700; color: var(--accent); line-height: 1;">
+              0.7286
+            </div>
+            <div class="text-dim" style="font-size: 0.75rem; margin-top: 0.5rem;">41 features</div>
+          </div>
+        </div>
+
+        <div class="status status-info mt-3">
+          <strong>Δ = −0.0077 AUC.</strong> Roughly 1% of performance.
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <h3 style="margin-bottom: 1rem;">Three reasons the trade was worth it</h3>
+
+        <div style="display: grid; gap: 1rem;">
+          <div style="display: flex; gap: 1rem; align-items: flex-start;">
+            <div class="feature-icon" style="flex-shrink: 0; width: 36px; height: 36px;">01</div>
+            <div>
+              <h3 style="font-size: 1rem; margin-bottom: 0.25rem;">Production-readiness</h3>
+              <p class="text-muted" style="font-size: 0.9rem;">
+                A model dependent on calendar year cannot generalize to future data.
+                If deployed in 2019, it would fail on 2020's COVID-driven defaults.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; align-items: flex-start;">
+            <div class="feature-icon" style="flex-shrink: 0; width: 36px; height: 36px;">02</div>
+            <div>
+              <h3 style="font-size: 1rem; margin-bottom: 0.25rem;">Fairness</h3>
+              <p class="text-muted" style="font-size: 0.9rem;">
+                Geography should not drive credit decisions. ZIP code and state
+                have well-documented disparate-impact implications in lending.
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; align-items: flex-start;">
+            <div class="feature-icon" style="flex-shrink: 0; width: 36px; height: 36px;">03</div>
+            <div>
+              <h3 style="font-size: 1rem; margin-bottom: 0.25rem;">Scientific integrity</h3>
+              <p class="text-muted" style="font-size: 0.9rem;">
+                Keeping leakage would mean reporting a number we knew was inflated.
+                That is not engineering — that is self-deception.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 5: ABLATION ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 05</span>
+        <h2 style="margin-top: 0.5rem;">The Ablation Study</h2>
+        <p>When the model hit the ceiling, we asked a simple question: why?</p>
+      </div>
+
+      <div class="card reveal">
+        <p class="text-muted" style="margin-bottom: 1rem;">
+          v4 stopped improving at 4,000 rounds — in <strong>every single fold</strong>.
+          Early stopping never triggered. Either the learning rate was too high,
+          or we needed more rounds. We designed a controlled experiment to find out.
+        </p>
+
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 500px;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-light);">
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Version</th>
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">learning_rate</th>
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">max_rounds</th>
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">AUC</th>
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">avg_best_iter</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">v4</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">0.011</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">4,000</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">0.7286</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--danger);">3,989 ⚠️</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border); background: rgba(0, 230, 118, 0.06);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--success); font-weight: 700;">v5 ✅</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">0.011</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">8,000</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--success); font-weight: 700;">0.7287</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">4,034</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">v6</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">0.025</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">8,000</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">0.7283</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">1,855</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card reveal" style="border-left: 3px solid var(--success);">
+        <h3 style="margin-bottom: 0.75rem; color: var(--success);">The finding</h3>
+        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+          With a higher ceiling, v5 finally triggered early stopping at
+          <strong>4,034 rounds</strong>. The bottleneck was not the learning
+          rate — it was the total training budget.
+        </p>
+        <p class="text-muted" style="font-size: 0.95rem;">
+          But more importantly: v5 and v6 landed at the same AUC, despite
+          v6 using <strong>50% fewer trees</strong>. The dataset had a ceiling.
+          We had reached it.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 6: THE GOLDEN FINDING ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 06</span>
+        <h2 style="margin-top: 0.5rem;">The Golden Finding</h2>
+        <p>Freed from leakage, the model found the right signal.</p>
+      </div>
+
+      <div class="card reveal">
+        <p class="text-muted" style="margin-bottom: 1.5rem;">
+          After removing leakage features, we re-ran SHAP on v5.
+          Something remarkable had happened.
+        </p>
+
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 500px;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-light);">
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Feature</th>
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">v3 Rank</th>
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">v5 Rank</th>
+                <th style="padding: 0.75rem; text-align: left; color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">sub_grade</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">1</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">1</td>
+                <td style="padding: 0.75rem; color: var(--text-dim);">—</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">term</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">2</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">2</td>
+                <td style="padding: 0.75rem; color: var(--text-dim);">—</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border); background: rgba(255, 82, 82, 0.05);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--danger);">issue_year</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--danger);">3</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--danger);">removed</td>
+                <td style="padding: 0.75rem; color: var(--danger);">🗑️</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">grade</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">4</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">3</td>
+                <td style="padding: 0.75rem; color: var(--success);">↑ 1</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">dti</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">5</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">4</td>
+                <td style="padding: 0.75rem; color: var(--success);">↑ 1</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">home_ownership</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">6</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono);">5</td>
+                <td style="padding: 0.75rem; color: var(--success);">↑ 1</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border); background: rgba(255, 171, 0, 0.05);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--warning);">addr_state</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--warning);">7</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--warning);">removed</td>
+                <td style="padding: 0.75rem; color: var(--warning);">🗑️</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border); background: rgba(0, 230, 118, 0.08);">
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--success); font-weight: 700;">int_rate</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--text-dim);">14</td>
+                <td style="padding: 0.75rem; font-family: var(--font-mono); color: var(--success); font-weight: 700;">6</td>
+                <td style="padding: 0.75rem; color: var(--success); font-weight: 700;">↑ 8</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card reveal" style="background: linear-gradient(135deg, rgba(0, 212, 255, 0.06), rgba(139, 92, 246, 0.06)); border-color: var(--accent);">
+        <h3 style="margin-bottom: 0.75rem;">Why this matters</h3>
+        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+          In v3, the model relied on <code class="mono">issue_year</code> and
+          <code class="mono">addr_state</code> — proxy signals that happened to
+          correlate with outcomes in the training data.
+        </p>
+        <p class="text-muted" style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+          In v5, freed from those crutches, the model leaned on
+          <code class="mono">int_rate</code> — the interest rate itself.
+          And the interest rate <strong>is</strong> a risk signal. Banks set it based
+          on their own assessment of default probability.
+        </p>
+        <p style="font-size: 0.95rem; color: var(--accent); font-weight: 500;">
+          The model had stopped cheating and started learning.
+        </p>
+      </div>
+
+      <div class="preview-wrap reveal mt-3">
+        <img src="figures/05_shap_summary.png" alt="SHAP summary v5">
+        <div class="preview-badge">SHAP summary · v5 (no leakage) · Top 20</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 7: VERIFICATION ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 07</span>
+        <h2 style="margin-top: 0.5rem;">Verification</h2>
+        <p>Before deploying, we checked that the model was telling the truth.</p>
+      </div>
+
+      <div class="card reveal">
+        <p class="text-muted" style="margin-bottom: 1.5rem;">
+          AUC alone is not enough. For a financial model, <strong>calibration</strong>
+          matters even more — the predicted probabilities must match actual outcomes.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+          <div style="text-align: center; padding: 1.5rem; background: var(--card-hover); border-radius: 10px; border: 1px solid var(--border);">
+            <div class="metric-label">Mean predicted PD</div>
+            <div style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1; margin-top: 0.5rem;">
+              19.98%
+            </div>
+          </div>
+          <div style="text-align: center; padding: 1.5rem; background: var(--card-hover); border-radius: 10px; border: 1px solid var(--border);">
+            <div class="metric-label">Actual default rate</div>
+            <div style="font-family: var(--font-mono); font-size: 2rem; font-weight: 700; color: var(--success); line-height: 1; margin-top: 0.5rem;">
+              19.98%
+            </div>
+          </div>
+        </div>
+
+        <div class="status status-success mt-3" style="margin-bottom: 0;">
+          ✓ <strong>Perfectly calibrated.</strong> If the model says 20%, then 20% of those
+          borrowers actually default. This is critical for Expected Loss calculations.
+        </div>
+      </div>
+
+      <div class="preview-wrap reveal mt-3">
+        <img src="figures/09_pd_distribution.png" alt="Calibration check">
+        <div class="preview-badge">PD distribution · calibration visual check</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 8: FINANCIAL LAYER ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 08</span>
+        <h2 style="margin-top: 0.5rem;">The Financial Layer</h2>
+        <p>Moving beyond AUC to the language banks actually speak.</p>
+      </div>
+
+      <div class="card reveal">
+        <p class="text-muted" style="margin-bottom: 1.5rem;">
+          We computed <strong>Expected Loss</strong> using the industry formula:
+        </p>
+
+        <div style="background: var(--card-hover); border-radius: 10px; padding: 1.5rem; text-align: center; border: 1px solid var(--border-light); font-family: var(--font-mono); font-size: 1.3rem; margin-bottom: 1.5rem;">
+          EL = PD × LGD × EAD
+        </div>
+
+        <div class="metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+          <div class="metric">
+            <div class="metric-label">Portfolio size</div>
+            <div class="metric-value" style="font-size: 1.3rem;">1.35M</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Total EAD</div>
+            <div class="metric-value" style="font-size: 1.3rem;">$19.4B</div>
+          </div>
+          <div class="metric" style="border-color: var(--danger);">
+            <div class="metric-label" style="color: var(--danger);">Total EL</div>
+            <div class="metric-value" style="font-size: 1.3rem; color: var(--danger);">$1.88B</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Avg rate</div>
+            <div class="metric-value" style="font-size: 1.3rem;">14.99%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-wrap reveal mt-3">
+        <img src="figures/10_el_by_grade.png" alt="Expected loss by grade">
+        <div class="preview-badge">Mean PD · Expected Loss · Risk-based rate — by grade</div>
+      </div>
+
+      <div class="card reveal mt-3">
+        <p class="text-muted" style="font-size: 0.95rem;">
+          Expected loss varies <strong>12×</strong> between grade A ($374) and grade G ($4,576).
+          This is the same signal a bank would see in their own portfolio.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 9: DEPLOY ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <span style="font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 2px;">CHAPTER 09</span>
+        <h2 style="margin-top: 0.5rem;">Deployment</h2>
+        <p>From a local .joblib file to a browser-based prediction service.</p>
+      </div>
+
+      <div class="card reveal">
+        <p class="text-muted" style="margin-bottom: 1.5rem;">
+          The trained LightGBM model was converted to ONNX and runs entirely
+          client-side via WebAssembly. No server. No API. No data leaving the device.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+          <div style="text-align: center; padding: 1rem; background: var(--card-hover); border-radius: 10px;">
+            <div class="metric-label">Python → ONNX</div>
+            <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-top: 0.5rem;">
+              5.47e-07
+            </div>
+            <div class="text-dim" style="font-size: 0.75rem; margin-top: 0.5rem;">Max diff</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: var(--card-hover); border-radius: 10px;">
+            <div class="metric-label">Browser inference</div>
+            <div style="font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-top: 0.5rem;">
+              ~1.2 ms
+            </div>
+            <div class="text-dim" style="font-size: 0.75rem; margin-top: 0.5rem;">Per prediction</div>
+          </div>
+        </div>
+
+        <p class="text-muted" style="font-size: 0.95rem;">
+          The model's predictions in the browser are numerically identical to
+          the original Python model — verified by comparing 5,000 random samples.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SUMMARY ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>In Summary</h2>
+        <p>What we learned along the way.</p>
+      </div>
+
+      <div class="features-grid reveal" style="grid-template-columns: 1fr;">
+
+        <div class="feature-card">
+          <div class="feature-icon">01</div>
+          <h3>Best model ≠ highest AUC</h3>
+          <p>
+            A model that is production-ready, fair, and calibrated is worth
+            more than one with 1% higher AUC and hidden leakage.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">02</div>
+          <h3>SHAP is not optional</h3>
+          <p>
+            AUC alone would never have revealed the leakage. Interpretation
+            is what separates engineering from guessing.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">03</div>
+          <h3>When a model hits a ceiling, check the data first</h3>
+          <p>
+            The Ablation Study proved the bottleneck was not hyperparameters,
+            it was the signal in the data itself.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">04</div>
+          <h3>Calibration is what makes a model useful</h3>
+          <p>
+            AUC = 0.73 with perfect calibration is worth more to a bank
+            than AUC = 0.80 with a miscalibrated score.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">05</div>
+          <h3>Deployment is half the work</h3>
+          <p>
+            The other half is documentation, interpretation, and honest
+            reporting. A model that cannot be explained is a model that
+            cannot be trusted.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow text-center reveal">
+      <h2 style="font-family: var(--font-heading); font-size: 2rem; margin-bottom: 1rem;">
+        Try the Model Yourself
+      </h2>
+      <p class="text-muted" style="max-width: 600px; margin: 0 auto 2rem;">
+        The final model — v5, calibrated, leakage-free — runs in your browser.
+        Enter any borrower's details and see the prediction.
+      </p>
+      <div class="hero-cta">
+        <a href="demo.html" class="btn btn-lg">
+          Launch Demo
+          <span style="font-family: var(--font-mono);">→</span>
+        </a>
+        <a href="concepts.html" class="btn btn-secondary btn-lg">Explore Concepts</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-brand">Credit<span>Trace</span></div>
+        <p class="text-dim" style="font-size: 0.85rem; margin-top: 0.5rem;">
+          The complete ML audit trail for credit risk.
+        </p>
+        <p class="text-dim" style="font-size: 0.8rem; margin-top: 0.75rem;">
+          Built by Erfan Mohammadi · Python · LightGBM · ONNX
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/erfan2mohammadi22" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://linkedin.com/in/erfan2mohammadi22" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="mailto:erfan2mohammadi22@gmail.com">Email</a>
+        <a href="https://t.me/ERFANmmmig29" target="_blank" rel="noopener">Telegram</a>
+      </div>
+    </div>
+
+    <div class="footer-content" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+      <div class="text-dim" style="font-size: 0.8rem;">
+        © 2026 CreditTrace. Open source under MIT License.
+      </div>
+      <div class="footer-links">
+        <a href="demo.html">Demo</a>
+        <a href="model.html">Model</a>
+        <a href="data.html">Data</a>
+        <a href="concepts.html">Concepts</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

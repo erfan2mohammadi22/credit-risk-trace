@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Demo — CreditTrace</title>
+  <meta name="description" content="Try CreditTrace: instant preset predictions or full custom analysis with the trained LightGBM model running in your browser.">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Cross-Origin Isolation (enables SharedArrayBuffer + multi-threaded WASM) -->
+  <script src="coi-serviceworker.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/demo.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <a href="index.html" class="logo">CreditTrace</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="demo.html" class="active">Demo</a>
+      <a href="model.html">Model</a>
+      <a href="data.html">Data</a>
+      <a href="process.html">Process</a>
+      <a href="concepts.html">Concepts</a>
+    </nav>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="section" style="padding-bottom: 0.75rem;">
+    <div class="container text-center">
+      <div class="hero-badge" style="margin-bottom: 0.75rem;">
+        <span class="hero-badge-dot"></span>
+        Interactive · Runs in your browser
+      </div>
+      <h1 style="font-family: var(--font-heading); font-size: clamp(1.6rem, 5vw, 2.6rem); letter-spacing: -1px; margin-bottom: 0.6rem; line-height: 1.15;">
+        Try <span class="gradient">CreditTrace</span>
+      </h1>
+      <p class="text-muted" style="max-width: 560px; margin: 0 auto; font-size: 0.88rem;">
+        Two ways to explore: <strong style="color: var(--text);">quick presets</strong> for instant results,
+        or <strong style="color: var(--text);">custom analysis</strong> for full control.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ TABS ============ -->
+  <section class="section" style="padding-top: 0.5rem; padding-bottom: 1rem;">
+    <div class="container-narrow">
+      <div class="demo-tabs" role="tablist">
+        <button class="demo-tab active" data-tab="quick" role="tab" aria-selected="true">
+          <span class="demo-tab-icon">⚡</span>
+          <span class="demo-tab-label">
+            <span class="demo-tab-title">Quick Presets</span>
+            <span class="demo-tab-sub">Instant · no download</span>
+          </span>
+        </button>
+        <button class="demo-tab" data-tab="custom" role="tab" aria-selected="false">
+          <span class="demo-tab-icon">🔬</span>
+          <span class="demo-tab-label">
+            <span class="demo-tab-title">Custom Analysis</span>
+            <span class="demo-tab-sub">Full control · loads model</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB: QUICK PRESETS ============ -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+
+      <div id="panel-quick" class="demo-panel">
+        <div class="quick-header">
+          <h2 class="quick-title">Choose a borrower profile</h2>
+          <p class="quick-sub text-dim">
+            Pre-computed from the same v5 model. Results are instant.
+          </p>
+        </div>
+
+        <div class="presets-grid">
+          <button class="preset-card" data-preset="excellent">
+            <span class="preset-emoji">🌟</span>
+            <span class="preset-name">Excellent</span>
+            <span class="preset-meta">Grade A · FICO 810</span>
+          </button>
+          <button class="preset-card" data-preset="good">
+            <span class="preset-emoji">🟢</span>
+            <span class="preset-name">Good</span>
+            <span class="preset-meta">Grade B · FICO 740</span>
+          </button>
+          <button class="preset-card" data-preset="average">
+            <span class="preset-emoji">🟡</span>
+            <span class="preset-name">Average</span>
+            <span class="preset-meta">Grade C · FICO 690</span>
+          </button>
+          <button class="preset-card" data-preset="risky">
+            <span class="preset-emoji">🟠</span>
+            <span class="preset-name">Risky</span>
+            <span class="preset-meta">Grade E · FICO 655</span>
+          </button>
+          <button class="preset-card" data-preset="very_risky">
+            <span class="preset-emoji">🔴</span>
+            <span class="preset-name">Very Risky</span>
+            <span class="preset-meta">Grade F · FICO 640</span>
+          </button>
+        </div>
+
+        <div id="quick-results" class="quick-results">
+          <div class="results-empty">
+            <div class="results-empty-icon">📊</div>
+            <p>Pick a profile above to see the prediction.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TAB: CUSTOM ANALYSIS ============ -->
+      <div id="panel-custom" class="demo-panel" style="display: none;">
+
+        <!-- Stage 1: Choose mode -->
+        <div id="custom-stage-warning" class="custom-stage">
+          <div class="custom-warning-card">
+            <div class="custom-warning-icon">⚙️</div>
+            <h2>Choose how to run</h2>
+            <p class="text-muted" style="margin-bottom: 1.5rem;">
+              Two ways to run custom analysis. Both use the same v5 model.
+            </p>
+
+            <div class="run-mode-grid">
+
+              <!-- Cloud mode -->
+              <div class="run-mode-card">
+                <div class="run-mode-icon">☁️</div>
+                <h3 class="run-mode-title">Use Cloud Version</h3>
+                <p class="run-mode-subtitle">Fast · Streamlit</p>
+
+                <ul class="run-mode-list">
+                  <li class="pro">No download needed</li>
+                  <li class="pro">Instant results</li>
+                  <li class="pro">Better for slow devices</li>
+                  <li class="con">Data is sent to a server</li>
+                  <li class="con">May take ~30s to wake if idle</li>
+                </ul>
+
+                <a class="btn run-mode-btn"
+                   id="custom-streamlit"
+                   href="#"
+                   target="_blank"
+                   rel="noopener">
+                  Open Streamlit Version →
+                </a>
+              </div>
+
+              <!-- Local mode -->
+              <div class="run-mode-card">
+                <div class="run-mode-icon">🔒</div>
+                <h3 class="run-mode-title">Run Locally</h3>
+                <p class="run-mode-subtitle">Private · No server</p>
+
+                <ul class="run-mode-list">
+                  <li class="pro">100% private — data stays in your browser</li>
+                  <li class="pro">Works offline after first load</li>
+                  <li class="pro">No rate limits, unlimited use</li>
+                  <li class="con">First load takes ~3 minutes</li>
+                  <li class="con">Downloads ~30 MB</li>
+                </ul>
+
+                <button class="btn btn-secondary run-mode-btn" id="custom-start">
+                  Download &amp; Run Locally
+                </button>
+              </div>
+
+            </div>
+
+            <div class="custom-warning-actions" style="margin-top: 1.5rem;">
+              <button class="btn btn-secondary" id="custom-cancel">
+                ← Go back to presets
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 2: Loading -->
+        <div id="custom-stage-loading" class="custom-stage" style="display: none;">
+          <div class="custom-loading-card">
+            <div class="custom-loading-title">Loading Model</div>
+
+            <!-- Step 1: Download -->
+            <div class="progress-step active" id="step-download">
+              <div class="progress-step-header">
+                <span class="progress-step-label">Downloading model</span>
+                <span class="progress-step-value" id="download-percent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-bar-fill" id="download-bar" style="width: 0%;"></div>
+              </div>
+              <div class="progress-step-detail" id="download-detail">
+                0 MB / ~30 MB
+              </div>
+            </div>
+
+            <!-- Step 2: Initialize -->
+            <div class="progress-step" id="step-init">
+              <div class="progress-step-header">
+                <span class="progress-step-label">Initializing runtime</span>
+                <span class="progress-step-value" id="init-percent">—</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-bar-fill" id="init-bar"></div>
+              </div>
+              <div class="progress-step-detail" id="init-detail">
+                Waiting for download...
+              </div>
+            </div>
+
+            <p class="custom-loading-tip text-dim">
+              💡 This download happens only once. Future visits will be instant.
+            </p>
+          </div>
+        </div>
+
+        <!-- Stage 3: Form + Results -->
+        <div id="custom-stage-form" class="custom-stage" style="display: none;">
+          <div class="demo-layout">
+            <div class="card">
+              <h2>Borrower Details</h2>
+              <p class="text-dim" style="font-size: 0.85rem; margin-bottom: 1.25rem;">
+                Adjust the values and click Analyze.
+              </p>
+
+              <div id="demo-form"></div>
+
+              <button class="btn analyze-btn" id="analyze-btn">Analyze</button>
+            </div>
+
+            <div class="card result-card">
+              <h2>Prediction</h2>
+              <div id="results">
+                <div class="results-empty">
+                  <div class="results-empty-icon">📊</div>
+                  <p>Adjust the sliders, then click <strong>Analyze</strong>.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-brand">Credit<span>Trace</span></div>
+        <p class="text-dim" style="font-size: 0.85rem; margin-top: 0.5rem;">
+          The complete ML audit trail for credit risk.
+        </p>
+        <p class="text-dim" style="font-size: 0.8rem; margin-top: 0.75rem;">
+          Built by Erfan Mohammadi · Python · LightGBM · ONNX
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/erfan2mohammadi22" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://linkedin.com/in/erfan2mohammadi22" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="mailto:erfan2mohammadi22@gmail.com">Email</a>
+        <a href="https://t.me/ERFANmmmig29" target="_blank" rel="noopener">Telegram</a>
+      </div>
+    </div>
+
+    <div class="footer-content" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+      <div class="text-dim" style="font-size: 0.8rem;">
+        © 2026 CreditTrace. Open source under MIT License.
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="model.html">Model</a>
+        <a href="process.html">Process</a>
+        <a href="concepts.html">Concepts</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/demo.js"></script>
+</body>
+</html>

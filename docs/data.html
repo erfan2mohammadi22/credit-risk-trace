@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>CreditTrace — Data</title>
+  <meta name="description" content="The Lending Club dataset: 1.3M real loans, feature engineering, and data-driven insights.">
+  <meta name="author" content="Erfan Mohammadi">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* ===== Page-specific responsive styles ===== */
+
+    /* Data Source info rows */
+    .source-info {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .source-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 0.5rem 1rem;
+      align-items: baseline;
+      padding: 0.25rem 0;
+    }
+
+    .source-label {
+      color: var(--text-dim);
+    }
+
+    .source-value {
+      font-family: var(--font-mono);
+      color: var(--text);
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    /* SHAP bar rows */
+    .shap-bar-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 60px;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .shap-bar-track {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .shap-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+    }
+
+    .shap-bar-label {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      text-align: right;
+      color: var(--accent);
+    }
+
+    /* Grade metric grid - smaller min width for mobile */
+    .grade-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    /* ===== Mobile breakpoint ===== */
+    @media (max-width: 600px) {
+      /* Data source: single column stack */
+      .source-row {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+        margin-bottom: 0.6rem;
+      }
+      .source-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .source-value {
+        font-size: 0.85rem;
+      }
+
+      /* SHAP bars: tighter columns */
+      .shap-bar-row {
+        grid-template-columns: 100px 1fr 50px;
+        gap: 0.5rem;
+      }
+      .shap-bar-label {
+        font-size: 0.75rem;
+      }
+
+      /* Keep preview badges readable */
+      .preview-badge {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.7rem;
+      }
+
+      /* Section padding tighter */
+      .section {
+        padding: 2.5rem 1rem;
+      }
+
+      /* Tables and code safe */
+      code.mono {
+        word-break: break-word;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .shap-bar-row {
+        grid-template-columns: 85px 1fr 45px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <a href="index.html" class="logo">CreditTrace</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="demo.html">Demo</a>
+      <a href="model.html">Model</a>
+      <a href="data.html" class="active">Data</a>
+      <a href="process.html">Process</a>
+      <a href="concepts.html">Concepts</a>
+    </nav>
+  </nav>
+
+  <!-- ============ HEADER ============ -->
+  <section class="section" style="padding-bottom: 2rem;">
+    <div class="container text-center">
+      <div class="hero-badge" style="margin-bottom: 1rem;">
+        <span class="hero-badge-dot"></span>
+        Lending Club · 2007 – 2018
+      </div>
+      <h1 style="font-family: var(--font-heading); font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -1.5px; margin-bottom: 1rem;">
+        The <span class="gradient">Data</span>
+      </h1>
+      <p class="text-muted" style="max-width: 680px; margin: 0 auto;">
+        1.35 million real loan records, 43 engineered features,
+        and a 19.98% default rate. Every decision started here.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ DATASET OVERVIEW ============ -->
+  <section class="section" style="padding-top: 2rem;">
+    <div class="container">
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="metric-label">Loans</div>
+          <div class="metric-value">1.35M</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Features</div>
+          <div class="metric-value">43</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Default Rate</div>
+          <div class="metric-value">19.98%</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Time Span</div>
+          <div class="metric-value">12 yrs</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DATA SOURCE ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>Data Source</h2>
+        <p>
+          Where the data came from — and why transparency matters.
+        </p>
+      </div>
+
+      <div class="feature-card reveal" style="padding: 1.75rem;">
+        <div class="feature-icon">📊</div>
+        <h3>Lending Club Loan Data</h3>
+        <p class="text-muted" style="font-size: 0.95rem; margin-top: 0.5rem;">
+          Real-world peer-to-peer lending records spanning 2007 to 2018,
+          covering over 2.2 million loans issued in the United States.
+          Only loans with a final outcome (Fully Paid or Charged Off)
+          were used — 1.35M records after filtering.
+        </p>
+
+        <div class="source-info">
+          <div class="source-row">
+            <span class="source-label">Dataset</span>
+            <span class="source-value">All Lending Club loan data</span>
+          </div>
+          <div class="source-row">
+            <span class="source-label">Curator</span>
+            <span class="source-value">wordsforthewise</span>
+          </div>
+          <div class="source-row">
+            <span class="source-label">Platform</span>
+            <span class="source-value">Kaggle Datasets</span>
+          </div>
+          <div class="source-row">
+            <span class="source-label">File used</span>
+            <span class="source-value">accepted_2007_to_2018Q4.csv.gz</span>
+          </div>
+          <div class="source-row">
+            <span class="source-label">Original source</span>
+            <span class="source-value">Lending Club (lendingclub.com)</span>
+          </div>
+          <div class="source-row">
+            <span class="source-label">License</span>
+            <span class="source-value">CC0 Public Domain</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <a href="https://www.kaggle.com/datasets/wordsforthewise/lending-club"
+             target="_blank" rel="noopener"
+             class="btn btn-secondary"
+             style="font-size: 0.9rem; padding: 0.7rem 1.25rem;">
+            View on Kaggle →
+          </a>
+        </div>
+      </div>
+
+      <div class="card reveal" style="margin-top: 1.5rem;">
+        <h3>Attribution &amp; Usage</h3>
+        <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.9rem;">
+          The dataset is publicly available on Kaggle and is used here
+          for educational and portfolio purposes. All credit for the
+          collection and cleaning of the raw data belongs to the
+          original curator and to Lending Club.
+        </p>
+        <p class="text-dim" style="margin-top: 1rem; font-size: 0.85rem;">
+          This project does not redistribute the raw data. Only
+          derived metrics, aggregates, and the trained model are
+          shared. To reproduce this work, download the dataset
+          directly from the link above.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TARGET DISTRIBUTION ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>Target Distribution</h2>
+        <p>
+          After filtering to loans with final outcomes, 80% were repaid
+          and 20% defaulted — a realistic class imbalance for credit risk.
+        </p>
+      </div>
+
+      <div class="preview-wrap reveal">
+        <img src="figures/01_target_distribution.png" alt="Target Distribution">
+        <div class="preview-badge">1,348,099 loans</div>
+      </div>
+
+      <div class="card mt-3 reveal">
+        <h3>Why This Matters</h3>
+        <p class="text-muted" style="margin-top: 0.5rem;">
+          The 80/20 split is a classic scenario in credit risk modeling.
+          Not extreme enough to require heavy resampling, but
+          imbalanced enough that accuracy alone would be misleading.
+          This is why AUC, KS, and Gini are the right metrics —
+          not accuracy.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NUMERIC DISTRIBUTIONS ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>Numeric Distributions</h2>
+        <p>
+          How key numerical features differ between defaulters and
+          non-defaulters. Every chart is split by the target variable.
+        </p>
+      </div>
+
+      <div class="preview-wrap reveal">
+        <img src="figures/02_numeric_distributions.png" alt="Numeric Distributions">
+        <div class="preview-badge">6 key features</div>
+      </div>
+
+      <div class="features-grid mt-3" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+        <div class="feature-card reveal">
+          <h3>Interest Rate</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            Defaulters show a clear rightward shift — higher rates
+            correlate strongly with higher risk.
+          </p>
+        </div>
+        <div class="feature-card reveal">
+          <h3>FICO Score</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            Defaulters cluster at lower FICO scores.
+            Non-defaulters peak around 700+.
+          </p>
+        </div>
+        <div class="feature-card reveal">
+          <h3>DTI Ratio</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            Higher debt-to-income ratios correlate with default,
+            though the pattern is non-linear.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CATEGORICAL FEATURES ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>Categorical Signals</h2>
+        <p>
+          Default rate by category. The Lending Club grade system
+          is by far the strongest single signal.
+        </p>
+      </div>
+
+      <div class="preview-wrap reveal">
+        <img src="figures/03_categorical_features.png" alt="Categorical Features">
+        <div class="preview-badge">5 categorical breakdowns</div>
+      </div>
+
+      <div class="card mt-3 reveal">
+        <h3>The Grade Gradient</h3>
+        <p class="text-muted" style="margin-top: 0.5rem;">
+          Default rates rise monotonically from 6% (grade A)
+          to nearly 50% (grade G). This monotonic relationship
+          is what makes the model both powerful and interpretable.
+        </p>
+        <div class="grade-grid">
+          <div class="metric">
+            <div class="metric-label">Grade A</div>
+            <div class="metric-value text-success" style="font-size: 1.3rem;">6.0%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Grade C</div>
+            <div class="metric-value" style="font-size: 1.3rem; color: var(--warning);">22.4%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Grade G</div>
+            <div class="metric-value text-danger" style="font-size: 1.3rem;">49.7%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CORRELATION HEATMAP ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>Feature Correlations</h2>
+        <p>
+          Correlation between numeric features. Most are weakly
+          correlated, meaning each contributes unique information.
+        </p>
+      </div>
+
+      <div class="preview-wrap reveal">
+        <img src="figures/04_correlation_heatmap.png" alt="Correlation Heatmap">
+        <div class="preview-badge">Pearson correlation</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURE ENGINEERING ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>Feature Engineering</h2>
+        <p>
+          From 30 raw columns to 43 engineered features —
+          ratios, log transforms, and FICO derivatives.
+        </p>
+      </div>
+
+      <div class="features-grid reveal" style="grid-template-columns: 1fr;">
+        <div class="feature-card">
+          <div class="feature-icon">01</div>
+          <h3>Ratios</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            <code class="mono">loan_income_ratio</code>,
+            <code class="mono">installment_to_income</code>,
+            <code class="mono">balance_per_account</code>,
+            <code class="mono">delinq_per_account</code>
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">02</div>
+          <h3>Log Transforms</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            <code class="mono">log_annual_inc</code>,
+            <code class="mono">log_revol_bal</code>,
+            <code class="mono">log_loan_amnt</code>
+            — to tame skewness.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">03</div>
+          <h3>FICO Derivatives</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            <code class="mono">fico_avg</code>,
+            <code class="mono">fico_range</code>
+            — average and spread of the FICO range.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">04</div>
+          <h3>Missing Indicators</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            Binary flags for whether values were missing —
+            "missing" itself is informative in credit data.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">05</div>
+          <h3>Aggregate Features</h3>
+          <p class="text-muted" style="font-size: 0.9rem;">
+            <code class="mono">total_credit_lines</code>,
+            <code class="mono">has_delinq</code>,
+            <code class="mono">has_bankruptcy</code>
+            — summarizing credit history.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURE IMPACT ============ -->
+  <section class="section">
+    <div class="container-narrow">
+      <div class="section-header reveal">
+        <h2>What Actually Matters</h2>
+        <p>
+          After removing leakage, the model learned from genuine
+          signals — not shortcuts.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <h3>Top Features by SHAP Impact</h3>
+        <div class="mt-2" style="display: grid; gap: 0.6rem;">
+          <div class="shap-bar-row">
+            <span class="mono text-muted" style="font-size: 0.85rem;">sub_grade</span>
+            <div class="shap-bar-track">
+              <div class="shap-bar-fill" style="width: 100%;"></div>
+            </div>
+            <span class="shap-bar-label">0.29</span>
+          </div>
+          <div class="shap-bar-row">
+            <span class="mono text-muted" style="font-size: 0.85rem;">term</span>
+            <div class="shap-bar-track">
+              <div class="shap-bar-fill" style="width: 62%;"></div>
+            </div>
+            <span class="shap-bar-label">0.18</span>
+          </div>
+          <div class="shap-bar-row">
+            <span class="mono text-muted" style="font-size: 0.85rem;">grade</span>
+            <div class="shap-bar-track">
+              <div class="shap-bar-fill" style="width: 49%;"></div>
+            </div>
+            <span class="shap-bar-label">0.14</span>
+          </div>
+          <div class="shap-bar-row">
+            <span class="mono text-muted" style="font-size: 0.85rem;">dti</span>
+            <div class="shap-bar-track">
+              <div class="shap-bar-fill" style="width: 42%;"></div>
+            </div>
+            <span class="shap-bar-label">0.12</span>
+          </div>
+          <div class="shap-bar-row">
+            <span class="mono text-muted" style="font-size: 0.85rem;">int_rate</span>
+            <div class="shap-bar-track">
+              <div class="shap-bar-fill" style="width: 34%;"></div>
+            </div>
+            <span class="shap-bar-label">0.10</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <h3>The Leakage Story</h3>
+        <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.95rem;">
+          Two features were removed after SHAP analysis revealed
+          they were causing temporal leakage:
+        </p>
+        <ul class="text-muted" style="margin-top: 0.75rem; padding-left: 1.5rem; font-size: 0.9rem;">
+          <li><code class="mono">issue_year</code> — the model learned macro-economic conditions of specific years, not borrower characteristics.</li>
+          <li><code class="mono">addr_state</code> — high SHAP variance (noisy signal) plus fairness concerns.</li>
+        </ul>
+        <p class="text-muted" style="margin-top: 1rem; font-size: 0.9rem;">
+          Removing them cost ~1% AUC but made the model genuinely
+          production-ready and fair.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow text-center reveal">
+      <h2 style="font-family: var(--font-heading); font-size: 1.8rem; margin-bottom: 1rem;">
+        See It In Action
+      </h2>
+      <p class="text-muted" style="max-width: 520px; margin: 0 auto 2rem;">
+        Try the interactive demo, or dive into how the model was built.
+      </p>
+      <div class="hero-cta">
+        <a href="demo.html" class="btn btn-lg">Try Demo</a>
+        <a href="model.html" class="btn btn-secondary btn-lg">See the Model</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-brand">Credit<span>Trace</span></div>
+        <p class="text-dim" style="font-size: 0.85rem; margin-top: 0.5rem;">
+          The complete ML audit trail for credit risk.
+        </p>
+        <p class="text-dim" style="font-size: 0.8rem; margin-top: 0.75rem;">
+          Built by Erfan Mohammadi · Python · LightGBM · ONNX
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/erfan2mohammadi22" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://linkedin.com/in/erfan2mohammadi22" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="mailto:erfan2mohammadi22@gmail.com">Email</a>
+        <a href="https://t.me/ERFANmmmig29" target="_blank" rel="noopener">Telegram</a>
+      </div>
+    </div>
+
+    <div class="footer-content" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+      <div class="text-dim" style="font-size: 0.8rem;">
+        © 2026 CreditTrace. Open source under MIT License.
+      </div>
+      <div class="footer-links">
+        <a href="demo.html">Demo</a>
+        <a href="process.html">Process</a>
+        <a href="concepts.html">Concepts</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

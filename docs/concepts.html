@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>Concepts — CreditTrace</title>
+  <meta name="description" content="Thirteen core concepts behind CreditTrace: credit risk, cross-validation, SHAP, calibration, Expected Loss, leakage, ablation, fairness, and more.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <a href="index.html" class="logo">CreditTrace</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="demo.html">Demo</a>
+      <a href="model.html">Model</a>
+      <a href="data.html">Data</a>
+      <a href="process.html">Process</a>
+      <a href="concepts.html" class="active">Concepts</a>
+    </nav>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="section" style="padding-bottom: 1rem;">
+    <div class="container text-center">
+      <div class="hero-badge" style="margin-bottom: 0.75rem;">
+        <span class="hero-badge-dot"></span>
+        Educational · 13 Concepts
+      </div>
+      <h1 style="font-family: var(--font-heading); font-size: clamp(1.6rem, 5vw, 3rem); letter-spacing: -1px; margin-bottom: 0.75rem; line-height: 1.15;">
+        The <span class="gradient">Concepts</span> Behind the Model
+      </h1>
+      <p class="text-muted" style="max-width: 620px; margin: 0 auto; font-size: 0.88rem;">
+        Every technique used in CreditTrace, explained in plain language.
+        Whether you're learning ML, preparing for interviews, or just
+        curious — start here.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPTS ACCORDION ============ -->
+  <section class="section" style="padding-top: 0.5rem;">
+    <div class="container-narrow">
+
+      <!-- 01 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">01</span>
+          <span class="concept-title">Credit Risk — The Foundation</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            <strong>Credit risk</strong> is the possibility that a borrower fails to repay a loan.
+            For a lender, every approved loan is a bet: will this person pay us back, with interest?
+          </p>
+          <p>
+            Traditional credit scoring (like FICO) uses a fixed formula. Modern approaches
+            use machine learning to combine dozens or hundreds of signals — income, credit history,
+            debt-to-income ratio, loan purpose — into a single probability of default.
+          </p>
+          <p>
+            The output of a credit risk model is a <strong>Probability of Default (PD)</strong>:
+            a number between 0 and 1 representing how likely a borrower is to default.
+          </p>
+          <div class="concept-highlight">
+            In CreditTrace, PD is the model's output — and everything else
+            (Expected Loss, risk-based pricing, decision thresholds) is built on top of it.
+          </div>
+        </div>
+      </details>
+
+      <!-- 02 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">02</span>
+          <span class="concept-title">Parquet vs. CSV — Storing Data Efficiently</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            <strong>CSV</strong> is text: every value is a string, every row is a line.
+            Simple, universal, but slow and fat. Our Lending Club CSV was <strong>392 MB</strong> compressed.
+          </p>
+          <p>
+            <strong>Parquet</strong> is binary and columnar. Instead of storing rows, it stores
+            columns together. When you only need three columns out of 40, Parquet reads only those three.
+            It also preserves data types and compresses naturally.
+          </p>
+          <ul>
+            <li>Columnar → reads only what you need</li>
+            <li>Typed → no re-parsing on load</li>
+            <li>Compressed → 5–10× smaller than CSV</li>
+            <li>Fast → 10–100× faster to load</li>
+          </ul>
+          <div class="concept-highlight">
+            Our data shrank from 392 MB (CSV.gz) to <strong>67 MB (Parquet)</strong> —
+            and loads in seconds instead of minutes.
+          </div>
+        </div>
+      </details>
+
+      <!-- 03 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">03</span>
+          <span class="concept-title">Cross-Validation — Trusting Your Score</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            If you train a model on all your data and test on the same data,
+            it will look perfect — but it has memorized the answers.
+            A single train/test split helps, but the score depends on which rows
+            happened to land in the test set.
+          </p>
+          <p>
+            <strong>K-Fold Cross-Validation</strong> solves this. Split the data into K parts.
+            Train K times, each time holding out a different part for validation.
+            Average the K scores.
+          </p>
+          <div class="concept-formula">Final score = mean(AUC₁, AUC₂, ..., AUC_K)</div>
+          <p>
+            <strong>Stratified</strong> K-Fold goes further: it preserves the class
+            balance in each fold, which matters when the positive class is rare.
+          </p>
+          <div class="concept-highlight">
+            CreditTrace uses <strong>Stratified 5-Fold CV</strong> on all model evaluations.
+            Every AUC number you see is an average across five independent validation sets.
+          </div>
+        </div>
+      </details>
+
+      <!-- 04 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">04</span>
+          <span class="concept-title">Early Stopping — Knowing When to Stop</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            Gradient boosting builds trees one at a time. Each tree tries to correct
+            the mistakes of the previous ones. In theory, more trees = better fit.
+            In practice, after a certain point the model starts memorizing noise.
+          </p>
+          <p>
+            <strong>Early stopping</strong> watches the validation score after every tree.
+            If the score hasn't improved in <em>N</em> consecutive trees, training stops.
+          </p>
+          <div class="concept-formula">stop when validation AUC doesn't improve for N rounds</div>
+          <p>
+            In CreditTrace, we used <code>early_stopping_rounds = 100</code>.
+            If the model doesn't improve for 100 trees, it stops.
+          </p>
+          <div class="concept-highlight">
+            In v4, early stopping never triggered — the model hit the 4,000-round ceiling.
+            In v5, with an 8,000-round ceiling, it stopped naturally at 4,034 rounds.
+            That discovery was the whole point of the Ablation Study.
+          </div>
+        </div>
+      </details>
+
+      <!-- 05 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">05</span>
+          <span class="concept-title">SHAP — Opening the Black Box</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            A gradient boosted model with 4,000 trees is not something you can read
+            by staring at it. <strong>SHAP</strong> (SHapley Additive exPlanations) gives
+            each feature a numeric contribution to each prediction.
+          </p>
+          <p>
+            The idea comes from game theory: treat the model output as a "payout"
+            and each feature as a "player." How much did each player contribute
+            to the final outcome?
+          </p>
+          <ul>
+            <li><strong>Positive SHAP</strong> → feature pushed the prediction toward default</li>
+            <li><strong>Negative SHAP</strong> → feature pushed the prediction away from default</li>
+            <li><strong>|SHAP|</strong> → how much influence the feature had</li>
+          </ul>
+          <p>
+            SHAP provides both global importance (which features matter most overall)
+            and local explanations (why this specific borrower got this specific score).
+          </p>
+          <div class="concept-highlight">
+            SHAP is how we discovered the temporal leakage. Without it,
+            <code>issue_year</code> would still be in the model, silently inflating the AUC.
+          </div>
+        </div>
+      </details>
+
+      <!-- 06 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">06</span>
+          <span class="concept-title">Calibration — When Probabilities Mean Something</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            A model can rank borrowers correctly (high AUC) and still be
+            <strong>miscalibrated</strong>: it might say "30% default probability" when the
+            true rate is 15%. That makes it useless for any financial calculation.
+          </p>
+          <p>
+            <strong>Calibration</strong> means: when the model says X%, then X% of those
+            borrowers actually default.
+          </p>
+          <div class="concept-formula">mean(predicted PD) ≈ actual default rate</div>
+          <p>
+            In CreditTrace: the mean predicted PD is <strong>19.98%</strong>,
+            and the actual default rate in the data is <strong>19.98%</strong>.
+            Perfectly calibrated.
+          </p>
+          <div class="concept-highlight">
+            Calibration is what makes Expected Loss work. If PD is wrong on average,
+            every dollar figure built on it is wrong too.
+          </div>
+        </div>
+      </details>
+
+      <!-- 07 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">07</span>
+          <span class="concept-title">Expected Loss — From Probability to Money</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            A bank doesn't just want to know the probability of default — it wants to know
+            <strong>how much money it will lose</strong>. That's Expected Loss.
+          </p>
+          <div class="concept-formula">EL = PD × LGD × EAD</div>
+          <ul>
+            <li><strong>PD</strong> — Probability of Default (from the model)</li>
+            <li><strong>LGD</strong> — Loss Given Default: the fraction of exposure lost if default happens</li>
+            <li><strong>EAD</strong> — Exposure at Default: the outstanding balance at the moment of default</li>
+          </ul>
+          <p>
+            We use the industry-standard LGD of <strong>45%</strong> and treat
+            EAD as the loan amount (a simplification).
+          </p>
+          <div class="concept-highlight">
+            In CreditTrace, Expected Loss ranges from <strong>$374 for grade A</strong>
+            to <strong>$4,576 for grade G</strong> — a 12× difference on the same $10k loan.
+          </div>
+        </div>
+      </details>
+
+      <!-- 08 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">08</span>
+          <span class="concept-title">Risk-Based Pricing — Charging for Risk</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            If a high-risk borrower is charged the same rate as a low-risk one,
+            the low-risk borrower subsidizes the high-risk one. That's not sustainable.
+          </p>
+          <p>
+            <strong>Risk-based pricing</strong> means setting the interest rate to cover
+            the expected loss — plus operating costs and profit margin.
+          </p>
+          <div class="concept-formula">min_rate = cost_of_funds + EL_rate + operating_cost + profit_margin</div>
+          <p>
+            With <code>COF = 2%</code>, <code>OC = 1%</code>, <code>PM = 3%</code>,
+            a grade-A borrower gets a rate around 8.7%, while a grade-G borrower
+            gets 28.4%.
+          </p>
+          <div class="concept-highlight">
+            This is the model's output translated into the language a bank actually uses:
+            basis points of interest rate.
+          </div>
+        </div>
+      </details>
+
+      <!-- 09 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">09</span>
+          <span class="concept-title">Data Leakage — The Silent Killer</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            <strong>Leakage</strong> happens when a feature contains information that
+            would not be available at prediction time — but is present in the training data.
+          </p>
+          <p>Common types:</p>
+          <ul>
+            <li><strong>Temporal leakage:</strong> features derived from the future (issue date, year)</li>
+            <li><strong>Target leakage:</strong> features computed using the target (recovery amount)</li>
+            <li><strong>Group leakage:</strong> train and test rows share a group (same person)</li>
+          </ul>
+          <p>
+            Leakage inflates your validation score and produces a model that fails
+            in production. It is often invisible to AUC — you need SHAP and thought to catch it.
+          </p>
+          <div class="concept-highlight">
+            Our <code>issue_year</code> feature was the third most important in v3.
+            It "helped" the model learn that 2015–2017 had higher default rates.
+            That's a macro-economic cycle, not a borrower signal. Removing it cost 1% AUC
+            but produced a model that could survive contact with the future.
+          </div>
+        </div>
+      </details>
+
+      <!-- 10 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">10</span>
+          <span class="concept-title">Ablation Study — Isolating What Matters</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            An <strong>ablation study</strong> is a controlled experiment: change one thing
+            at a time, keep everything else fixed, measure the effect.
+          </p>
+          <p>
+            The name comes from neuroscience: removing (ablating) parts of a brain
+            to see what each part does.
+          </p>
+          <p>
+            In CreditTrace, v4 hit the 4,000-round ceiling in every fold. Two hypotheses:
+          </p>
+          <ul>
+            <li>The learning rate was too high → try a lower one</li>
+            <li>The round budget was too small → try more rounds</li>
+          </ul>
+          <p>
+            We designed v5 (lower LR, more rounds) and v6 (higher LR, more rounds)
+            to isolate the effect. Result: the bottleneck was the round budget,
+            not the learning rate.
+          </p>
+          <div class="concept-highlight">
+            After 8,000 rounds, v5 stopped naturally at 4,034. The model had found
+            its optimum. Additional rounds would have overfit.
+          </div>
+        </div>
+      </details>
+
+      <!-- 11 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">11</span>
+          <span class="concept-title">Fairness in ML — Who Gets Hurt?</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            Machine learning models can perpetuate or amplify discrimination.
+            In credit risk, using features like geography, race, or gender proxies
+            can produce <strong>disparate impact</strong>: treating some groups systematically worse.
+          </p>
+          <p>Common approaches:</p>
+          <ul>
+            <li><strong>Pre-processing:</strong> remove or transform sensitive features</li>
+            <li><strong>In-processing:</strong> add fairness constraints to training</li>
+            <li><strong>Post-processing:</strong> adjust thresholds per group</li>
+          </ul>
+          <p>
+            In CreditTrace, we took the simplest honest path: remove
+            <code>addr_state</code> because its SHAP variance was extremely high
+            and geography has well-documented fairness implications in lending.
+          </p>
+          <div class="concept-highlight">
+            Full fairness auditing (disparate impact, equal opportunity across
+            protected groups) requires sensitive attributes we don't have.
+            We document this as a limitation, not a solved problem.
+          </div>
+        </div>
+      </details>
+
+      <!-- 12 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">12</span>
+          <span class="concept-title">LightGBM vs. XGBoost vs. CatBoost</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            All three are gradient boosting libraries. They share the same core idea —
+            sequentially build trees that correct each other's errors — but differ
+            in implementation details.
+          </p>
+          <ul>
+            <li>
+              <strong>XGBoost:</strong> depth-wise tree growth. Very well-documented,
+              widely used, historically the standard.
+            </li>
+            <li>
+              <strong>LightGBM:</strong> leaf-wise tree growth. Faster on large data,
+              lower memory, native categorical support. What we use here.
+            </li>
+            <li>
+              <strong>CatBoost:</strong> ordered boosting, special handling of categoricals.
+              Often best when categorical features dominate.
+            </li>
+          </ul>
+          <p>
+            In our tests, LightGBM consistently outperformed XGBoost on this dataset
+            (0.7349 vs. 0.7295 at baseline), primarily due to native categorical handling
+            and the leaf-wise growth strategy.
+          </p>
+          <div class="concept-highlight">
+            <strong>Rule of thumb:</strong> LightGBM for speed and large data,
+            XGBoost for stability and ecosystem, CatBoost for heavy categorical use cases.
+          </div>
+        </div>
+      </details>
+
+      <!-- 13 -->
+      <details class="concept">
+        <summary>
+          <span class="concept-number">13</span>
+          <span class="concept-title">ONNX — Running Models Anywhere</span>
+          <span class="concept-toggle">+</span>
+        </summary>
+        <div class="concept-body">
+          <p>
+            <strong>ONNX</strong> (Open Neural Network Exchange) is an open format
+            for representing machine learning models. It's designed so a model
+            trained in one framework can run in another.
+          </p>
+          <p>Why it matters:</p>
+          <ul>
+            <li>A LightGBM model can be exported to ONNX</li>
+            <li>The same ONNX file runs in Python, C++, JavaScript, mobile, or the browser</li>
+            <li>No need to reimplement the algorithm for each platform</li>
+          </ul>
+          <p>
+            In CreditTrace, the trained LightGBM model was converted to ONNX and
+            loaded in the browser via <strong>WebAssembly</strong>. The same file
+            that predicts in Python predicts in your browser — verified numerically
+            (max difference: 5.47 × 10⁻⁷).
+          </p>
+          <div class="concept-highlight">
+            This is why the demo works with no server. The model lives in your
+            browser tab. No data is sent anywhere. It runs in ~1.2 ms per prediction.
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section class="section section-alt">
+    <div class="container-narrow text-center">
+      <h2 style="font-family: var(--font-heading); font-size: clamp(1.4rem, 4vw, 2rem); margin-bottom: 0.75rem;">
+        See the Concepts in Action
+      </h2>
+      <p class="text-muted" style="max-width: 560px; margin: 0 auto 1.5rem; font-size: 0.88rem;">
+        Reading about calibration is one thing. Seeing it in a live prediction
+        is another. Try the demo.
+      </p>
+      <div class="hero-cta">
+        <a href="demo.html" class="btn btn-lg">
+          Launch Demo
+          <span style="font-family: var(--font-mono);">→</span>
+        </a>
+        <a href="process.html" class="btn btn-secondary btn-lg">Read the Journey</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <div class="footer-brand">Credit<span>Trace</span></div>
+        <p class="text-dim" style="font-size: 0.78rem; margin-top: 0.35rem;">
+          The complete ML audit trail for credit risk.
+        </p>
+        <p class="text-dim" style="font-size: 0.72rem; margin-top: 0.5rem;">
+          Built by Erfan Mohammadi · Python · LightGBM · ONNX
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="https://github.com/erfan2mohammadi22" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://linkedin.com/in/erfan2mohammadi22" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="mailto:erfan2mohammadi22@gmail.com">Email</a>
+        <a href="https://t.me/ERFANmmmig29" target="_blank" rel="noopener">Telegram</a>
+      </div>
+    </div>
+
+    <div class="footer-content" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+      <div class="text-dim" style="font-size: 0.72rem;">
+        © 2026 CreditTrace. Open source under MIT License.
+      </div>
+      <div class="footer-links">
+        <a href="demo.html">Demo</a>
+        <a href="model.html">Model</a>
+        <a href="data.html">Data</a>
+        <a href="process.html">Process</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
