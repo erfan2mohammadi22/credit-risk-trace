@@ -1810,9 +1810,9 @@ st.html(
     '<p style="text-align: center; color: #64748b; font-size: 0.78rem; line-height: 1.8;">'
     '<strong style="color: #e8eef5;">CreditTrace</strong> — Credit Risk, Engineered.<br>'
     "The complete ML audit trail for credit risk.<br>"
-    '<a href="https://github.com/erfan2mohammadi22/CreditTrace" target="_blank" '
+    '<a href="https://github.com/erfan2mohammadi22/credit-risk-trace" target="_blank" '
     'style="color: #00d4ff; text-decoration: none; margin: 0 8px;">GitHub</a> · '
-    '<a href="https://erfan2mohammadi22.github.io/CreditTrace/" target="_blank" '
+    '<a href="https://erfan2mohammadi22.github.io/credit-risk-trace/" target="_blank" '
     'style="color: #00d4ff; text-decoration: none; margin: 0 8px;">WASM Version</a>'
     "</p>"
 )

@@ -5,9 +5,9 @@
 
 An end-to-end machine learning pipeline for credit default prediction. Trained on **1.3 million real loans** from Lending Club, rigorously validated with 5-fold cross-validation, and deployed in two fundamentally different architectures: a client-side WASM app and a server-side Streamlit tool.
 
-[![AUC](https://img.shields.io/badge/AUC-0.7287-00d4ff?style=flat-square)](https://github.com/erfan2mohammadi22/CreditTrace)
-[![KS](https://img.shields.io/badge/KS-0.3322-8b5cf6?style=flat-square)](https://github.com/erfan2mohammadi22/CreditTrace)
-[![Gini](https://img.shields.io/badge/Gini-0.4573-00e676?style=flat-square)](https://github.com/erfan2mohammadi22/CreditTrace)
+[![AUC](https://img.shields.io/badge/AUC-0.7287-00d4ff?style=flat-square)](https://github.com/erfan2mohammadi22/credit-risk-trace)
+[![KS](https://img.shields.io/badge/KS-0.3322-8b5cf6?style=flat-square)](https://github.com/erfan2mohammadi22/credit-risk-trace)
+[![Gini](https://img.shields.io/badge/Gini-0.4573-00e676?style=flat-square)](https://github.com/erfan2mohammadi22/credit-risk-trace)
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
@@ -19,7 +19,7 @@ CreditTrace is deployed in two fundamentally different architectures. Same model
 
 | | Documentation Site | Analysis Tool |
 |---|---|---|
-| **URL** | [erfan2mohammadi22.github.io/CreditTrace](https://erfan2mohammadi22.github.io/CreditTrace/) | [credittrace.streamlit.app](https://credittrace.streamlit.app/) |
+| **URL** | [erfan2mohammadi22.github.io/credit-risk-trace](https://erfan2mohammadi22.github.io/credit-risk-trace/) | [credittrace.streamlit.app](https://credittrace.streamlit.app/) |
 | **Architecture** | Client-side (WASM) | Server-side (Streamlit Cloud) |
 | **Focus** | Education · Model Card · Journey | Analysis · Portfolio · Batch |
 | **Privacy** | 100% — no data leaves your device | Data sent to server |
@@ -197,7 +197,7 @@ credit-risk-project/
 ### Option 1: Run the Documentation Site Locally
 
 ```bash
-git clone https://github.com/erfan2mohammadi22/CreditTrace.git
+git clone https://github.com/erfan2mohammadi22/credit-risk-trace.git
 cd CreditTrace
 
 cd docs
