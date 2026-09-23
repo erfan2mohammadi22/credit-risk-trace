@@ -23,7 +23,7 @@ CreditTrace is deployed in two fundamentally different architectures. Same model
 | **Architecture** | Client-side (WASM) | Server-side (Streamlit Cloud) |
 | **Focus** | Education · Model Card · Journey | Analysis · Portfolio · Batch |
 | **Privacy** | 100% — no data leaves your device | Data sent to server |
-| **First Load** | ~20 seconds (downloads 30 MB model) | Instant |
+| **First Load** | ~20 seconds (downloads the model) | Instant |
 | **Speed** | Sub-second after warmup | Depends on server |
 | **Cost** | Free forever | Free tier (1 concurrent user) |
 | **Offline** | Works after first load | Requires internet |
