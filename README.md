@@ -17,17 +17,17 @@ An end-to-end machine learning pipeline for credit default prediction. Trained o
 
 CreditTrace is deployed in two fundamentally different architectures. Same model, same AUC, different trade-offs.
 
-| | Documentation Site | Analysis Tool |
-|---|---|---|
-| **URL** | [erfan2mohammadi22.github.io/credit-risk-trace](https://erfan2mohammadi22.github.io/credit-risk-trace/) | [credit-risk-trace.streamlit.app](https://credit-risk-trace.streamlit.app/) |
-| **Architecture** | Client-side (WASM) | Server-side (Streamlit Cloud) |
-| **Focus** | Education · Model Card · Journey | Analysis · Portfolio · Batch |
-| **Privacy** | 100% — no data leaves your device | Data sent to server |
-| **First Load** | ~20 seconds (downloads 30 MB model) | Instant |
-| **Speed** | Sub-second after warmup | Depends on server |
-| **Cost** | Free forever | Free tier (1 concurrent user) |
-| **Offline** | Works after first load | Requires internet |
-| **Best for** | Understanding the model | Using the model |
+|                  | Documentation Site                                                                                      | Analysis Tool                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **URL**          | [erfan2mohammadi22.github.io/credit-risk-trace](https://erfan2mohammadi22.github.io/credit-risk-trace/) | [credit-risk-trace.streamlit.app](https://credit-risk-trace.streamlit.app/) |
+| **Architecture** | Client-side (WASM)                                                                                      | Server-side (Streamlit Cloud)                                               |
+| **Focus**        | Education · Model Card · Journey                                                                        | Analysis · Portfolio · Batch                                                |
+| **Privacy**      | 100% — no data leaves your device                                                                       | Data sent to server                                                         |
+| **First Load**   | ~20 seconds (downloads the model)                                           | Instant                                                                     |
+| **Speed**        | Sub-second after warmup                                                                                 | Depends on server                                                           |
+| **Cost**         | Free forever                                                                                            | Free tier (1 concurrent user)                                               |
+| **Offline**      | Works after first load                                                                                  | Requires internet                                                           |
+| **Best for**     | Understanding the model                                                                                 | Using the model                                                             |
 
 ### Documentation Site Features
 
@@ -50,20 +50,20 @@ CreditTrace is deployed in two fundamentally different architectures. Same model
 
 ## Model Performance
 
-| Metric | Value |
-|---|---|
-| **Algorithm** | LightGBM v5 (GBDT) |
-| **AUC** | **0.7287** |
-| **KS** | **0.3322** |
-| **Gini** | **0.4573** |
-| **Features** | 41 |
-| **Trees** | 4,235 |
-| **Training rows** | 1,078,479 |
-| **Test rows** | 269,620 |
-| **Default rate** | 19.98% |
-| **Calibration** | Perfect (PD = 19.98% = actual) |
-| **Leakage** | None |
-| **Fairness** | `addr_state` removed |
+| Metric            | Value                          |
+| ----------------- | ------------------------------ |
+| **Algorithm**     | LightGBM v5 (GBDT)             |
+| **AUC**           | **0.7287**                     |
+| **KS**            | **0.3322**                     |
+| **Gini**          | **0.4573**                     |
+| **Features**      | 41                             |
+| **Trees**         | 4,235                          |
+| **Training rows** | 1,078,479                      |
+| **Test rows**     | 269,620                        |
+| **Default rate**  | 19.98%                         |
+| **Calibration**   | Perfect (PD = 19.98% = actual) |
+| **Leakage**       | None                           |
+| **Fairness**      | `addr_state` removed           |
 
 Cross-validated with **Stratified 5-Fold CV** and early stopping at 4,034 rounds.
 
@@ -77,13 +77,13 @@ The journey from a naive model to a production-ready one involved one critical d
 
 The initial model (v3) achieved **AUC = 0.7363** with 47 features. But SHAP analysis revealed something suspicious:
 
-| Rank | Feature | SHAP Importance |
-|---|---|---|
-| 1 | `sub_grade` | 0.27 |
-| 2 | `term` | 0.18 |
-| **3** | **`issue_year`** | **0.17** (leakage) |
-| 4 | `grade` | 0.13 |
-| 5 | `dti` | 0.11 |
+| Rank  | Feature          | SHAP Importance     |
+| ----- | ---------------- | ------------------- |
+| 1     | `sub_grade`      | 0.27                |
+| 2     | `term`           | 0.18                |
+| **3** | **`issue_year`** | **0.17** (leakage)  |
+| 4     | `grade`          | 0.13                |
+| 5     | `dti`            | 0.11                |
 | **6** | **`addr_state`** | **0.10** (fairness) |
 
 `issue_year` had become the third most important feature, but it has **nothing to do with the borrower**. The model was learning macro-economic conditions (2015–2017 had higher default rates), which is **temporal leakage**.
@@ -102,16 +102,16 @@ Removing these features cost roughly **1% of AUC** (0.7363 to 0.7286). But it wa
 
 After removal, we re-ran SHAP. The result was striking:
 
-| Feature | v3 Rank | v5 Rank |
-|---|---|---|
-| `sub_grade` | 1 | 1 |
-| `term` | 2 | 2 |
-| `issue_year` | **3** | removed |
-| `grade` | 4 | 3 |
-| `dti` | 5 | 4 |
-| `home_ownership` | 6 | 5 |
-| `addr_state` | **7** | removed |
-| **`int_rate`** | **14** | **6** |
+| Feature          | v3 Rank | v5 Rank |
+| ---------------- | ------- | ------- |
+| `sub_grade`      | 1       | 1       |
+| `term`           | 2       | 2       |
+| `issue_year`     | **3**   | removed |
+| `grade`          | 4       | 3       |
+| `dti`            | 5       | 4       |
+| `home_ownership` | 6       | 5       |
+| `addr_state`     | **7**   | removed |
+| **`int_rate`**   | **14**  | **6**   |
 
 `int_rate` jumped from rank 14 to rank 6, doubling its importance (0.05 to 0.098). Freed from leakage, the model learned to rely on the interest rate, which is itself a reflection of credit risk. **This is exactly what a credit model should do.**
 
@@ -129,15 +129,15 @@ CreditTrace computes **Expected Loss** using the industry-standard formula:
 EL = PD × LGD × EAD
 ```
 
-| Grade | PD | Expected Loss | Suggested Rate |
-|---|---|---|---|
-| A | 6.0% | $374 | 8.7% |
-| B | 13.4% | $817 | 12.0% |
-| C | 22.4% | $1,488 | 16.1% |
-| D | 30.4% | $2,186 | 19.7% |
-| E | 38.4% | $3,129 | 23.3% |
-| F | 45.1% | $3,965 | 26.3% |
-| G | 49.7% | $4,576 | 28.4% |
+| Grade | PD    | Expected Loss | Suggested Rate |
+| ----- | ----- | ------------- | -------------- |
+| A     | 6.0%  | $374          | 8.7%           |
+| B     | 13.4% | $817          | 12.0%          |
+| C     | 22.4% | $1,488        | 16.1%          |
+| D     | 30.4% | $2,186        | 19.7%          |
+| E     | 38.4% | $3,129        | 23.3%          |
+| F     | 45.1% | $3,965        | 26.3%          |
+| G     | 49.7% | $4,576        | 28.4%          |
 
 **Expected loss varies 12× between grade A and grade G.**
 

@@ -76,13 +76,32 @@ self.onmessage = async (event) => {
       const chunks = [];
       let loaded = 0;
 
+      // GitHub Pages sends files gzipped, so content-length is the
+      // compressed size, not the actual download size.
+      const reportedTotal = total || 0;
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         chunks.push(value);
         loaded += value.length;
-        const percent = total ? (loaded / total) * 100 : 0;
-        self.postMessage({ type: 'download-progress', loaded, total, percent });
+
+        let percent = 0;
+        if (reportedTotal > 0) {
+          if (loaded <= reportedTotal * 1.05) {
+            percent = (loaded / reportedTotal) * 100;
+          } else {
+            const estimated = Math.max(loaded, reportedTotal * 6);
+            percent = Math.min(99, (loaded / estimated) * 100);
+          }
+        }
+
+        self.postMessage({
+          type: 'download-progress',
+          loaded,
+          total: loaded,
+          percent: Math.min(100, percent),
+        });
       }
 
       const allChunks = new Uint8Array(loaded);
